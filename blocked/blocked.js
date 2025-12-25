@@ -27,11 +27,34 @@ function getUrlParams() {
 
 // Go back or close tab
 function goBack() {
-    if (window.history.length > 1) {
-        window.history.back();
-    } else {
-        window.close();
+    // Prefer the tabs API (more reliable for extension pages), fall back to history/close.
+    try {
+        if (chrome?.tabs?.getCurrent && chrome?.tabs?.goBack) {
+            chrome.tabs.getCurrent((tab) => {
+                if (chrome.runtime.lastError || !tab?.id) {
+                    // Fallback to history
+                    if (window.history.length > 1) window.history.back();
+                    else window.close();
+                    return;
+                }
+
+                // Go back once.
+                chrome.tabs.goBack(tab.id, () => {
+                    // If it fails, fall back.
+                    if (chrome.runtime.lastError) {
+                        if (window.history.length > 1) window.history.back();
+                        else window.close();
+                    }
+                });
+            });
+            return;
+        }
+    } catch {
+        // fall through
     }
+
+    if (window.history.length > 1) window.history.back();
+    else window.close();
 }
 
 // Make goBack available globally
@@ -55,5 +78,9 @@ document.addEventListener('DOMContentLoaded', () => {
         badge.textContent = category;
         badge.classList.remove('hidden');
     }
+
+    // Wire up the button click via JS (MV3 CSP blocks inline onclick handlers).
+    const backBtn = document.getElementById('backToWorkBtn');
+    if (backBtn) backBtn.addEventListener('click', goBack);
 });
 
