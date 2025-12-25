@@ -72,10 +72,81 @@
         </button>
       </div>
 
+      <!-- Option B: intentional "I really need this" flow -->
+      <div class="mt-6">
+        <button id="openPassModalBtn"
+          class="inline-flex items-center gap-2 text-white/80 hover:text-white transition-all text-sm font-medium py-2 px-4 rounded-xl hover:bg-white/10">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          I really need this…
+        </button>
+      </div>
+
       <!-- Motivational footer -->
-      <p class="text-white/40 text-sm mt-12 font-body">
+      <p class="text-white/40 text-sm mt-8 font-body">
         🎯 Focus Mode is keeping you on track
       </p>
+    </div>
+  </div>
+
+  <!-- Temporary pass modal -->
+  <div id="passModal" class="fixed inset-0 z-50 hidden" aria-hidden="true">
+    <div class="absolute inset-0 backdrop-blur-sm" style="background: rgba(0,0,0,0.55);"></div>
+
+    <div class="relative z-10 min-h-screen flex items-center justify-center p-8">
+      <div class="w-full max-w-xl bg-white/10 backdrop-blur-sm rounded-2xl p-6">
+        <div class="flex items-center gap-2 mb-4">
+          <h2 class="font-display text-2xl font-bold text-white">Quick exception</h2>
+          <button id="closePassModalBtn" class="ml-auto text-white/60 hover:text-white transition-all"
+            aria-label="Close">
+            ✕
+          </button>
+        </div>
+
+        <p class="text-white/80 text-sm mb-6 font-body">
+          Tell yourself <span class="font-semibold">why</span> you need this. The pause is the point.
+        </p>
+
+        <div class="mb-6">
+          <label for="passReasonInput" class="block text-white/60 text-sm mb-2">Why do you need this right now?</label>
+          <textarea id="passReasonInput" rows="3" class="input-field" style="background: rgba(255,255,255,0.92);"
+            placeholder="e.g. confirm interview time, reset password, respond to urgent client email"></textarea>
+          <p id="passReasonHint" class="text-white/60 text-xs mt-1">Minimum 5 words.</p>
+        </div>
+
+        <div class="mb-6">
+          <div class="text-white/60 text-sm mb-2">How long?</div>
+          <div class="flex gap-2">
+            <button
+              class="durationBtn rounded-xl bg-white/10 backdrop-blur-sm px-6 py-2 text-white/80 font-semibold transition-all"
+              data-duration-ms="60000">1 min</button>
+            <button
+              class="durationBtn rounded-xl bg-white/10 backdrop-blur-sm px-6 py-2 text-white/80 font-semibold transition-all"
+              data-duration-ms="300000">5 min</button>
+            <button
+              class="durationBtn rounded-xl bg-white/10 backdrop-blur-sm px-6 py-2 text-white/80 font-semibold transition-all"
+              data-duration-ms="900000">15 min</button>
+          </div>
+          <p class="text-white/60 text-xs mt-2">
+            You’ll be sent back to the page you tried to open. Focus mode stays on.
+          </p>
+        </div>
+
+        <div id="passError" class="hidden text-red-500 text-sm mb-3"></div>
+
+        <div class="flex items-center gap-2">
+          <button id="confirmPassBtn" class="btn-primary px-8 py-3 text-lg inline-flex items-center gap-2" disabled
+            style="opacity: 0.6;">
+            Allow temporarily
+          </button>
+          <button id="cancelPassBtn"
+            class="rounded-xl bg-white/10 backdrop-blur-sm px-6 py-3 text-white/80 font-semibold transition-all">
+            Nevermind
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 
