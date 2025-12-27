@@ -1,169 +1,282 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Focus Mode</title>
   <link rel="stylesheet" href="../styles.css">
 </head>
+
 <body class="w-[380px] bg-cream font-body">
   <div class="p-4">
-    <!-- Header with Focus Toggle -->
-    <header class="text-center mb-6">
-      <div class="flex items-center justify-center gap-2 mb-3">
-        <svg class="w-8 h-8 text-coral-500" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <circle cx="50" cy="50" r="45" fill="currentColor"/>
-          <circle cx="35" cy="40" r="6" fill="white"/>
-          <circle cx="65" cy="40" r="6" fill="white"/>
-          <path d="M35 60 Q50 70 65 60" stroke="white" stroke-width="4" stroke-linecap="round" fill="none"/>
-        </svg>
-        <h1 class="font-display text-2xl font-bold text-charcoal">Focus Mode</h1>
-      </div>
-      
-      <!-- Toggle Switch -->
-      <div class="flex flex-col items-center gap-2">
-        <button id="focusToggle" class="toggle-switch toggle-switch-off" role="switch" aria-checked="false">
-          <span class="toggle-knob toggle-knob-off"></span>
-        </button>
-        <span id="focusStatus" class="text-sm font-medium text-gray-500">Taking a break</span>
-      </div>
-    </header>
+    <!-- Main View -->
+    <div id="mainView">
+      <!-- Header with Focus Toggle -->
+      <header class="text-center mb-6">
+        <div class="flex items-center justify-between mb-3">
+          <!-- Left spacer to keep title centered -->
+          <div class="w-12"></div>
 
-    <!-- Confetti container (for animation) -->
-    <div id="confettiContainer" class="fixed inset-0 pointer-events-none z-50"></div>
-
-    <!-- Add Site Tabs -->
-    <section class="card mb-4">
-      <!-- Tab Headers -->
-      <div class="flex mb-3 border-b border-gray-200">
-        <button id="tabCurrentSite" class="tab-btn tab-active flex-1 py-2 text-sm font-semibold text-center transition-all">
-          Current Site
-        </button>
-        <button id="tabManualAdd" class="tab-btn flex-1 py-2 text-sm font-semibold text-center transition-all text-gray-400">
-          Manual Add
-        </button>
-      </div>
-
-      <!-- Current Site Tab Content -->
-      <div id="currentSiteTab">
-        <h2 class="font-display font-semibold text-charcoal mb-3 flex items-center gap-2">
-          <svg class="w-5 h-5 text-teal-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
-          </svg>
-          Quick Add Current Site
-        </h2>
-        
-        <div id="quickAddContent">
-          <div class="flex items-center gap-2 mb-3 p-2 bg-gray-50 rounded-xl">
-            <svg class="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"/>
+          <!-- Centered Logo + Title -->
+          <div class="flex items-center justify-center gap-2 flex-1">
+            <svg class="w-8 h-8 text-coral-500" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="50" cy="50" r="45" fill="currentColor" />
+              <circle cx="35" cy="40" r="6" fill="white" />
+              <circle cx="65" cy="40" r="6" fill="white" />
+              <path d="M35 60 Q50 70 65 60" stroke="white" stroke-width="4" stroke-linecap="round" fill="none" />
             </svg>
-            <span id="currentDomain" class="text-sm font-medium text-charcoal truncate">Loading...</span>
+            <h1 class="font-display text-2xl font-bold text-charcoal">Focus Mode</h1>
           </div>
-          
+
+          <!-- Right-aligned Stats Link -->
+          <button id="statsLink"
+            class="w-12 text-sm text-gray-400 hover:text-teal-500 transition-colors font-medium text-right flex-shrink-0">
+            Stats
+          </button>
+        </div>
+
+        <!-- Toggle Switch -->
+        <div class="flex flex-col items-center gap-2">
+          <button id="focusToggle" class="toggle-switch toggle-switch-off" role="switch" aria-checked="false">
+            <span class="toggle-knob toggle-knob-off"></span>
+          </button>
+          <span id="focusStatus" class="text-sm font-medium text-gray-500">Taking a break</span>
+        </div>
+      </header>
+
+      <!-- Confetti container (for animation) -->
+      <div id="confettiContainer" class="fixed inset-0 pointer-events-none z-50"></div>
+
+      <!-- Add Site Tabs -->
+      <section class="card mb-4">
+        <!-- Tab Headers -->
+        <div class="flex mb-3 border-b border-gray-200">
+          <button id="tabCurrentSite"
+            class="tab-btn tab-active flex-1 py-2 text-sm font-semibold text-center transition-all">
+            Current Site
+          </button>
+          <button id="tabManualAdd"
+            class="tab-btn flex-1 py-2 text-sm font-semibold text-center transition-all text-gray-400">
+            Manual Add
+          </button>
+        </div>
+
+        <!-- Current Site Tab Content -->
+        <div id="currentSiteTab">
+          <h2 class="font-display font-semibold text-charcoal mb-3 flex items-center gap-2">
+            <svg class="w-5 h-5 text-teal-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+            </svg>
+            Quick Add Current Site
+          </h2>
+
+          <div id="quickAddContent">
+            <div class="flex items-center gap-2 mb-3 p-2 bg-gray-50 rounded-xl">
+              <svg class="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
+              </svg>
+              <span id="currentDomain" class="text-sm font-medium text-charcoal truncate">Loading...</span>
+            </div>
+
+            <div class="flex gap-2 mb-3">
+              <div class="relative flex-1">
+                <select id="categorySelect" class="select-field text-sm pr-8">
+                  <option value="">Select category...</option>
+                </select>
+                <svg class="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none"
+                  fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                </svg>
+              </div>
+            </div>
+
+            <!-- New category input (hidden by default) -->
+            <div id="newCategoryContainer" class="hidden mb-3">
+              <input type="text" id="newCategoryInput" class="input-field text-sm"
+                placeholder="Enter new category name...">
+            </div>
+
+            <button id="addSiteBtn" class="btn-primary w-full text-sm" disabled>
+              Block this site
+            </button>
+
+            <p id="addSiteMessage" class="text-xs text-center mt-2 hidden"></p>
+          </div>
+
+          <!-- Already blocked state -->
+          <div id="alreadyBlocked" class="hidden text-center py-4">
+            <div class="text-teal-500 mb-2">
+              <svg class="w-8 h-8 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <p class="text-sm font-medium text-charcoal">This site is already blocked!</p>
+            <p id="alreadyBlockedCategory" class="text-xs text-gray-500 mt-1"></p>
+          </div>
+        </div>
+
+        <!-- Manual Add Tab Content -->
+        <div id="manualAddTab" class="hidden">
+          <h2 class="font-display font-semibold text-charcoal mb-3 flex items-center gap-2">
+            <svg class="w-5 h-5 text-coral-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+            </svg>
+            Add Any Website
+          </h2>
+
+          <div class="mb-3">
+            <input type="text" id="manualDomainInput" class="input-field text-sm"
+              placeholder="e.g., twitter.com, reddit.com">
+            <p class="text-xs text-gray-400 mt-1">Enter domain without https://</p>
+          </div>
+
           <div class="flex gap-2 mb-3">
             <div class="relative flex-1">
-              <select id="categorySelect" class="select-field text-sm pr-8">
+              <select id="manualCategorySelect" class="select-field text-sm pr-8">
                 <option value="">Select category...</option>
               </select>
-              <svg class="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+              <svg class="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none"
+                fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
               </svg>
             </div>
           </div>
-          
-          <!-- New category input (hidden by default) -->
-          <div id="newCategoryContainer" class="hidden mb-3">
-            <input type="text" id="newCategoryInput" class="input-field text-sm" placeholder="Enter new category name...">
+
+          <!-- New category input for manual add (hidden by default) -->
+          <div id="manualNewCategoryContainer" class="hidden mb-3">
+            <input type="text" id="manualNewCategoryInput" class="input-field text-sm"
+              placeholder="Enter new category name...">
           </div>
-          
-          <button id="addSiteBtn" class="btn-primary w-full text-sm" disabled>
+
+          <button id="manualAddSiteBtn" class="btn-primary w-full text-sm" disabled>
             Block this site
           </button>
-          
-          <p id="addSiteMessage" class="text-xs text-center mt-2 hidden"></p>
-        </div>
-        
-        <!-- Already blocked state -->
-        <div id="alreadyBlocked" class="hidden text-center py-4">
-          <div class="text-teal-500 mb-2">
-            <svg class="w-8 h-8 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-            </svg>
-          </div>
-          <p class="text-sm font-medium text-charcoal">This site is already blocked!</p>
-          <p id="alreadyBlockedCategory" class="text-xs text-gray-500 mt-1"></p>
-        </div>
-      </div>
 
-      <!-- Manual Add Tab Content -->
-      <div id="manualAddTab" class="hidden">
+          <p id="manualAddMessage" class="text-xs text-center mt-2 hidden"></p>
+        </div>
+      </section>
+
+      <!-- Blocked Sites List -->
+      <section class="card">
         <h2 class="font-display font-semibold text-charcoal mb-3 flex items-center gap-2">
           <svg class="w-5 h-5 text-coral-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
           </svg>
-          Add Any Website
+          Blocked Sites
+          <span id="sitesCount" class="text-xs bg-gray-200 text-gray-600 px-2 py-0.5 rounded-full ml-auto">0</span>
         </h2>
-        
-        <div class="mb-3">
-          <input type="text" id="manualDomainInput" class="input-field text-sm" placeholder="e.g., twitter.com, reddit.com">
-          <p class="text-xs text-gray-400 mt-1">Enter domain without https://</p>
-        </div>
-        
-        <div class="flex gap-2 mb-3">
-          <div class="relative flex-1">
-            <select id="manualCategorySelect" class="select-field text-sm pr-8">
-              <option value="">Select category...</option>
-            </select>
-            <svg class="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
-            </svg>
-          </div>
-        </div>
-        
-        <!-- New category input for manual add (hidden by default) -->
-        <div id="manualNewCategoryContainer" class="hidden mb-3">
-          <input type="text" id="manualNewCategoryInput" class="input-field text-sm" placeholder="Enter new category name...">
-        </div>
-        
-        <button id="manualAddSiteBtn" class="btn-primary w-full text-sm" disabled>
-          Block this site
-        </button>
-        
-        <p id="manualAddMessage" class="text-xs text-center mt-2 hidden"></p>
-      </div>
-    </section>
 
-    <!-- Blocked Sites List -->
-    <section class="card">
-      <h2 class="font-display font-semibold text-charcoal mb-3 flex items-center gap-2">
-        <svg class="w-5 h-5 text-coral-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/>
-        </svg>
-        Blocked Sites
-        <span id="sitesCount" class="text-xs bg-gray-200 text-gray-600 px-2 py-0.5 rounded-full ml-auto">0</span>
-      </h2>
-      
-      <div id="sitesList" class="max-h-64 overflow-y-auto scrollbar-thin">
-        <!-- Empty state -->
-        <div id="emptyState" class="text-center py-8">
-          <div class="text-gray-300 mb-3">
-            <svg class="w-12 h-12 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
-            </svg>
+        <div id="sitesList" class="max-h-64 overflow-y-auto scrollbar-thin">
+          <!-- Empty state -->
+          <div id="emptyState" class="text-center py-8">
+            <div class="text-gray-300 mb-3">
+              <svg class="w-12 h-12 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                  d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+              </svg>
+            </div>
+            <p class="text-sm text-gray-400">No sites blocked yet</p>
+            <p class="text-xs text-gray-300 mt-1">Add sites above to get started!</p>
           </div>
-          <p class="text-sm text-gray-400">No sites blocked yet</p>
-          <p class="text-xs text-gray-300 mt-1">Add sites above to get started!</p>
+
+          <!-- Sites will be rendered here -->
+          <div id="sitesContainer" class="hidden space-y-1"></div>
         </div>
-        
-        <!-- Sites will be rendered here -->
-        <div id="sitesContainer" class="hidden space-y-1"></div>
-      </div>
-    </section>
+      </section>
+    </div><!-- End Main View -->
+
+    <!-- Stats View (hidden by default) -->
+    <div id="statsView" class="hidden">
+      <!-- Stats Header -->
+      <header class="mb-4">
+        <div class="flex items-center mb-4">
+          <button id="statsBackBtn" class="text-gray-400 hover:text-charcoal transition-colors">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
+          <h1 class="font-display text-xl font-bold text-charcoal"> &nbsp;&nbsp;Your Focus Stats</h1>
+        </div>
+
+        <!-- Period Tabs -->
+        <div class="flex gap-1 bg-gray-100 p-1 rounded-xl">
+          <button class="stats-tab stats-tab-active" data-period="day">Day</button>
+          <button class="stats-tab" data-period="week">Week</button>
+          <button class="stats-tab" data-period="month">Month</button>
+          <button class="stats-tab" data-period="year">Year</button>
+          <button class="stats-tab" data-period="all">All</button>
+        </div>
+      </header>
+
+      <!-- Big Number Display -->
+      <section class="text-center mb-4">
+        <div id="statsTotalNumber" class="font-display stats-big-number text-teal-500">0</div>
+        <div class="text-sm text-gray-500 mt-2">distractions blocked</div>
+        <div id="statsEncouragement" class="text-sm text-teal-600 mt-2 font-medium"></div>
+      </section>
+
+      <!-- Trend Chart -->
+      <section class="card mb-4">
+        <h3 class="stats-section-title">
+          <svg class="stats-section-icon-lg" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
+          </svg>
+          Trend
+        </h3>
+        <div class="stats-trend-container">
+          <div id="statsTrendChart" class="stats-trend-bars">
+            <!-- Bars will be rendered here -->
+          </div>
+          <div id="statsTrendLabels" class="stats-trend-labels text-xs text-gray-400">
+            <!-- Labels will be rendered here -->
+          </div>
+        </div>
+      </section>
+
+      <!-- Category Breakdown -->
+      <section class="card mb-4">
+        <h3 class="stats-section-title">
+          <svg class="stats-section-icon-lg" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+          </svg>
+          By Category
+        </h3>
+        <div id="statsCategoryList" class="space-y-0">
+          <!-- Categories will be rendered here -->
+        </div>
+        <div id="statsNoCategoryData" class="text-center py-4 text-sm text-gray-400 hidden">
+          No data yet
+        </div>
+      </section>
+
+      <!-- Top Sites -->
+      <section class="card">
+        <h3 class="stats-section-title">
+          <svg class="stats-section-icon-lg" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.975 7.975 0 0120 13a7.975 7.975 0 01-2.343 5.657z" />
+          </svg>
+          Top Sites Blocked
+        </h3>
+        <div id="statsTopSitesList" class="space-y-1">
+          <!-- Top sites will be rendered here -->
+        </div>
+        <div id="statsNoSitesData" class="text-center py-4 text-sm text-gray-400 hidden">
+          No data yet
+        </div>
+      </section>
+    </div><!-- End Stats View -->
   </div>
-  
+
   <script src="../shared/storage.js"></script>
   <script src="popup.js"></script>
 </body>
-</html>
 
+</html>

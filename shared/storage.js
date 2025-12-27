@@ -188,6 +188,205 @@ async function getSitesGroupedByCategory() {
   return grouped;
 }
 
+// ============ Stats Functions ============
+
+// Get all block stats
+async function getBlockStats() {
+  const { blockStats } = await chrome.storage.local.get('blockStats');
+  return blockStats ?? [];
+}
+
+// Get stats for a specific period
+// period: 'day' | 'week' | 'month' | 'year' | 'all'
+async function getStatsForPeriod(period) {
+  const stats = await getBlockStats();
+  const now = new Date();
+  
+  // Calculate time boundaries
+  const boundaries = getPeriodBoundaries(period, now);
+  
+  // Filter events within the period
+  const filtered = stats.filter(e => e.timestamp >= boundaries.start && e.timestamp <= boundaries.end);
+  
+  // Calculate total
+  const total = filtered.length;
+  
+  // Calculate trend data
+  const trend = calculateTrend(filtered, period, now);
+  
+  // Calculate by category
+  const byCategory = {};
+  filtered.forEach(e => {
+    const cat = e.category || 'Uncategorized';
+    byCategory[cat] = (byCategory[cat] || 0) + 1;
+  });
+  
+  // Calculate top sites
+  const siteCounts = {};
+  filtered.forEach(e => {
+    const domain = e.domain || 'unknown';
+    siteCounts[domain] = (siteCounts[domain] || 0) + 1;
+  });
+  
+  const topSites = Object.entries(siteCounts)
+    .map(([domain, count]) => ({ domain, count }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 5);
+  
+  return { total, trend, byCategory, topSites };
+}
+
+// Get period boundaries (start and end timestamps)
+function getPeriodBoundaries(period, now) {
+  const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  const endOfDay = startOfDay + 24 * 60 * 60 * 1000 - 1;
+  
+  switch (period) {
+    case 'day':
+      return { start: startOfDay, end: endOfDay };
+    
+    case 'week': {
+      // Start of week (Sunday)
+      const dayOfWeek = now.getDay();
+      const startOfWeek = startOfDay - dayOfWeek * 24 * 60 * 60 * 1000;
+      const endOfWeek = startOfWeek + 7 * 24 * 60 * 60 * 1000 - 1;
+      return { start: startOfWeek, end: endOfWeek };
+    }
+    
+    case 'month': {
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+      const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999).getTime();
+      return { start: startOfMonth, end: endOfMonth };
+    }
+    
+    case 'year': {
+      const startOfYear = new Date(now.getFullYear(), 0, 1).getTime();
+      const endOfYear = new Date(now.getFullYear(), 11, 31, 23, 59, 59, 999).getTime();
+      return { start: startOfYear, end: endOfYear };
+    }
+    
+    case 'all':
+    default:
+      return { start: 0, end: Date.now() };
+  }
+}
+
+// Calculate trend data for visualization
+function calculateTrend(events, period, now) {
+  switch (period) {
+    case 'day':
+      return calculateHourlyTrend(events, now);
+    case 'week':
+      return calculateDailyTrend(events, now, 7);
+    case 'month':
+      return calculateDailyTrend(events, now, getDaysInMonth(now));
+    case 'year':
+      return calculateMonthlyTrend(events, now);
+    case 'all':
+      return calculateAllTimeTrend(events);
+    default:
+      return [];
+  }
+}
+
+// Get number of days in current month
+function getDaysInMonth(date) {
+  return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
+}
+
+// Hourly trend for "day" view (24 bars)
+function calculateHourlyTrend(events, now) {
+  const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  const hourMs = 60 * 60 * 1000;
+  
+  const hours = [];
+  for (let i = 0; i < 24; i++) {
+    const hourStart = startOfDay + i * hourMs;
+    const hourEnd = hourStart + hourMs;
+    const count = events.filter(e => e.timestamp >= hourStart && e.timestamp < hourEnd).length;
+    
+    // Format label: 12am, 1am, ..., 12pm, 1pm, ...
+    const label = i === 0 ? '12am' : i < 12 ? `${i}am` : i === 12 ? '12pm' : `${i - 12}pm`;
+    hours.push({ label, count });
+  }
+  return hours;
+}
+
+// Daily trend for "week" or "month" view
+function calculateDailyTrend(events, now, numDays) {
+  const days = [];
+  const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const dayMs = 24 * 60 * 60 * 1000;
+  
+  // For week: start from Sunday of current week
+  // For month: start from 1st of current month
+  let startDate;
+  if (numDays === 7) {
+    const dayOfWeek = now.getDay();
+    startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - dayOfWeek);
+  } else {
+    startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+  }
+  
+  for (let i = 0; i < numDays; i++) {
+    const dayStart = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate() + i).getTime();
+    const dayEnd = dayStart + dayMs;
+    const count = events.filter(e => e.timestamp >= dayStart && e.timestamp < dayEnd).length;
+    
+    // Label: day name for week, date number for month
+    const dayDate = new Date(dayStart);
+    const label = numDays === 7 ? dayNames[dayDate.getDay()] : String(dayDate.getDate());
+    days.push({ label, count });
+  }
+  return days;
+}
+
+// Monthly trend for "year" view (12 bars)
+function calculateMonthlyTrend(events, now) {
+  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const months = [];
+  
+  for (let i = 0; i < 12; i++) {
+    const monthStart = new Date(now.getFullYear(), i, 1).getTime();
+    const monthEnd = new Date(now.getFullYear(), i + 1, 0, 23, 59, 59, 999).getTime();
+    const count = events.filter(e => e.timestamp >= monthStart && e.timestamp <= monthEnd).length;
+    
+    months.push({ label: monthNames[i], count });
+  }
+  return months;
+}
+
+// All-time trend (by month, all months since first event)
+function calculateAllTimeTrend(events) {
+  if (events.length === 0) return [];
+  
+  // Find earliest and latest event
+  const sorted = [...events].sort((a, b) => a.timestamp - b.timestamp);
+  const earliest = new Date(sorted[0].timestamp);
+  const latest = new Date(sorted[sorted.length - 1].timestamp);
+  
+  const months = [];
+  let current = new Date(earliest.getFullYear(), earliest.getMonth(), 1);
+  const end = new Date(latest.getFullYear(), latest.getMonth() + 1, 0);
+  
+  while (current <= end) {
+    const monthStart = current.getTime();
+    const monthEnd = new Date(current.getFullYear(), current.getMonth() + 1, 0, 23, 59, 59, 999).getTime();
+    const count = events.filter(e => e.timestamp >= monthStart && e.timestamp <= monthEnd).length;
+    
+    // Format: "Jan '24"
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const label = `${monthNames[current.getMonth()]} '${String(current.getFullYear()).slice(-2)}`;
+    
+    months.push({ label, count });
+    
+    // Move to next month
+    current = new Date(current.getFullYear(), current.getMonth() + 1, 1);
+  }
+  
+  return months;
+}
+
 // Export for use in other scripts
 if (typeof window !== 'undefined') {
   window.FocusModeStorage = {
@@ -204,7 +403,10 @@ if (typeof window !== 'undefined') {
     removeCategory,
     normalizeDomain,
     extractDomain,
-    getSitesGroupedByCategory
+    getSitesGroupedByCategory,
+    // Stats functions
+    getBlockStats,
+    getStatsForPeriod
   };
 }
 

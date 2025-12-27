@@ -508,3 +508,204 @@ async function loadBlockedSites() {
   });
 }
 
+// ============ Stats View ============
+
+// DOM Elements - Stats
+const mainView = document.getElementById('mainView');
+const statsView = document.getElementById('statsView');
+const statsLink = document.getElementById('statsLink');
+const statsBackBtn = document.getElementById('statsBackBtn');
+const statsTabs = document.querySelectorAll('.stats-tab');
+const statsTotalNumber = document.getElementById('statsTotalNumber');
+const statsEncouragement = document.getElementById('statsEncouragement');
+const statsTrendChart = document.getElementById('statsTrendChart');
+const statsTrendLabels = document.getElementById('statsTrendLabels');
+const statsCategoryList = document.getElementById('statsCategoryList');
+const statsNoCategoryData = document.getElementById('statsNoCategoryData');
+const statsTopSitesList = document.getElementById('statsTopSitesList');
+const statsNoSitesData = document.getElementById('statsNoSitesData');
+
+// Stats state
+let currentStatsPeriod = 'day';
+
+// Initialize stats event listeners
+statsLink.addEventListener('click', showStatsView);
+statsBackBtn.addEventListener('click', hideStatsView);
+
+statsTabs.forEach(tab => {
+  tab.addEventListener('click', () => {
+    const period = tab.dataset.period;
+    switchStatsPeriod(period);
+  });
+});
+
+// Show stats view
+async function showStatsView() {
+  mainView.classList.add('hidden');
+  statsView.classList.remove('hidden');
+  await loadStatsData(currentStatsPeriod);
+}
+
+// Hide stats view
+function hideStatsView() {
+  statsView.classList.add('hidden');
+  mainView.classList.remove('hidden');
+}
+
+// Switch stats period
+async function switchStatsPeriod(period) {
+  currentStatsPeriod = period;
+
+  // Update tab styles
+  statsTabs.forEach(tab => {
+    if (tab.dataset.period === period) {
+      tab.classList.add('stats-tab-active');
+    } else {
+      tab.classList.remove('stats-tab-active');
+    }
+  });
+
+  await loadStatsData(period);
+}
+
+// Load and display stats data
+async function loadStatsData(period) {
+  const stats = await FocusModeStorage.getStatsForPeriod(period);
+
+  // Update total number
+  statsTotalNumber.textContent = stats.total;
+
+  // Update encouragement message
+  statsEncouragement.textContent = getEncouragementMessage(stats.total);
+
+  // Render trend chart
+  renderTrendChart(stats.trend);
+
+  // Render category breakdown
+  renderCategoryBreakdown(stats.byCategory, stats.total);
+
+  // Render top sites
+  renderTopSites(stats.topSites);
+}
+
+// Get encouragement message based on block count
+function getEncouragementMessage(count) {
+  if (count === 0) return 'Start blocking to see your stats!';
+  if (count < 5) return 'Good start! Keep it up! 🌱';
+  if (count < 20) return 'Great progress! You\'re building focus! 💪';
+  if (count < 50) return 'Amazing! You\'re a focus champion! 🏆';
+  if (count < 100) return 'Incredible discipline! Keep crushing it! 🔥';
+  return 'Legendary focus! You\'re unstoppable! 🚀';
+}
+
+// Render trend chart
+function renderTrendChart(trend) {
+  if (!trend || trend.length === 0) {
+    statsTrendChart.innerHTML = '<div class="text-center text-gray-400 text-xs py-4 w-full">No data yet</div>';
+    statsTrendLabels.innerHTML = '';
+    return;
+  }
+
+  const maxCount = Math.max(...trend.map(t => t.count), 1);
+  const trendCount = trend.length;
+
+  // Set CSS variable for grid column count
+  const container = statsTrendChart.closest('.stats-trend-container');
+  if (container) {
+    container.style.setProperty('--trend-count', trendCount);
+  }
+
+  // Render bars
+  statsTrendChart.innerHTML = trend.map(t => {
+    const heightPercent = (t.count / maxCount) * 100;
+    const isEmpty = t.count === 0;
+    return `<div class="stats-bar ${isEmpty ? 'stats-bar-empty' : ''}" style="height: ${Math.max(heightPercent, 8)}%" title="${t.label}: ${t.count}"></div>`;
+  }).join('');
+
+  // Determine which labels to show (to avoid crowding)
+  let visibleIndices = new Set();
+
+  if (trendCount <= 7) {
+    // Show all labels for small sets (week view)
+    for (let i = 0; i < trendCount; i++) visibleIndices.add(i);
+  } else {
+    // For larger sets, show 5 evenly distributed labels
+    const step = Math.max(1, Math.floor((trendCount - 1) / 4));
+    visibleIndices.add(0);
+    for (let i = step; i < trendCount - 1; i += step) {
+      if (visibleIndices.size < 4) visibleIndices.add(i);
+    }
+    visibleIndices.add(trendCount - 1);
+  }
+
+  // Render ALL label slots (one per bar) but only show text for visible ones
+  // This keeps labels aligned with their corresponding bars
+  statsTrendLabels.innerHTML = trend.map((t, i) =>
+    `<span class="text-center">${visibleIndices.has(i) ? t.label : ''}</span>`
+  ).join('');
+}
+
+// Render category breakdown
+function renderCategoryBreakdown(byCategory, total) {
+  const categories = Object.entries(byCategory).sort((a, b) => b[1] - a[1]);
+
+  if (categories.length === 0) {
+    statsCategoryList.classList.add('hidden');
+    statsNoCategoryData.classList.remove('hidden');
+    return;
+  }
+
+  statsNoCategoryData.classList.add('hidden');
+  statsCategoryList.classList.remove('hidden');
+
+  const maxCount = Math.max(...categories.map(c => c[1]), 1);
+
+  statsCategoryList.innerHTML = categories.map(([category, count]) => {
+    const barWidth = Math.max((count / maxCount) * 100, 4);
+
+    return `
+      <div class="stats-category-item">
+        <div class="stats-category-meta">
+          <span class="stats-category-name">${category}</span>
+          <span class="stats-category-count">${count}</span>
+        </div>
+        <div class="stats-category-bar-wrap">
+          <div class="stats-category-bar">
+            <div class="stats-category-bar-fill" style="width: ${barWidth}%"></div>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+// Render top sites
+function renderTopSites(topSites) {
+  if (!topSites || topSites.length === 0) {
+    statsTopSitesList.classList.add('hidden');
+    statsNoSitesData.classList.remove('hidden');
+    return;
+  }
+
+  statsNoSitesData.classList.add('hidden');
+  statsTopSitesList.classList.remove('hidden');
+
+  statsTopSitesList.innerHTML = topSites.map((site, index) => {
+    const rank = index + 1;
+    let rankClass = 'stats-site-rank-default';
+    if (rank === 1) rankClass = 'stats-site-rank-1';
+    else if (rank === 2) rankClass = 'stats-site-rank-2';
+    else if (rank === 3) rankClass = 'stats-site-rank-3';
+
+    return `
+      <div class="stats-site-item">
+        <div class="flex items-center">
+          <span class="stats-site-rank ${rankClass}">${rank}</span>
+          <span class="text-charcoal truncate">${site.domain}</span>
+        </div>
+        <span class="text-gray-500 text-sm font-medium">${site.count}</span>
+      </div>
+    `;
+  }).join('');
+}
+

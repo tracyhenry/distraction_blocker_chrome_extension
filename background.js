@@ -71,7 +71,10 @@ async function initializeStorage() {
       blockedSites: [],
       // Temporary passes for "I really need this" moments.
       // Each entry: { domain, expiresAt, createdAt, reason, targetUrl? }
-      temporaryAllows: []
+      temporaryAllows: [],
+      // Stats: record each block event with timestamp
+      // Each entry: { timestamp, domain, category }
+      blockStats: []
     });
     return;
   }
@@ -81,9 +84,29 @@ async function initializeStorage() {
   if (!Array.isArray(data.categories)) patch.categories = DEFAULT_CATEGORIES;
   if (!Array.isArray(data.blockedSites)) patch.blockedSites = [];
   if (!Array.isArray(data.temporaryAllows)) patch.temporaryAllows = [];
+  if (!Array.isArray(data.blockStats)) patch.blockStats = [];
 
   if (Object.keys(patch).length > 0) {
     await chrome.storage.local.set(patch);
+  }
+}
+
+// Record a block event for stats tracking
+async function recordBlockEvent(domain, category) {
+  try {
+    const { blockStats = [] } = await chrome.storage.local.get('blockStats');
+    const event = {
+      timestamp: Date.now(),
+      domain: domain.toLowerCase(),
+      category: category || 'Uncategorized'
+    };
+    
+    // Keep last 10,000 events to prevent unbounded growth
+    const updated = [...blockStats, event].slice(-10000);
+    await chrome.storage.local.set({ blockStats: updated });
+    console.log('Block event recorded:', event);
+  } catch (e) {
+    console.error('Failed to record block event:', e);
   }
 }
 
@@ -198,6 +221,9 @@ chrome.webNavigation.onCompleted.addListener(async (details) => {
 
     console.log('Blocking (final URL):', details.url, '-> matched:', blockedSite.domain);
 
+    // Record the block event for stats
+    await recordBlockEvent(blockedSite.domain, blockedSite.category);
+
     // Redirect to blocked page
     const blockedPageUrl = chrome.runtime.getURL(
       `/blocked/blocked.html?domain=${encodeURIComponent(blockedSite.domain)}&category=${encodeURIComponent(blockedSite.category)}&url=${encodeURIComponent(details.url)}`
@@ -238,6 +264,9 @@ chrome.webNavigation.onHistoryStateUpdated.addListener(async (details) => {
     }
 
     console.log('Blocking (history state):', details.url, '-> matched:', blockedSite.domain);
+
+    // Record the block event for stats
+    await recordBlockEvent(blockedSite.domain, blockedSite.category);
 
     const blockedPageUrl = chrome.runtime.getURL(
       `/blocked/blocked.html?domain=${encodeURIComponent(blockedSite.domain)}&category=${encodeURIComponent(blockedSite.category)}&url=${encodeURIComponent(details.url)}`
