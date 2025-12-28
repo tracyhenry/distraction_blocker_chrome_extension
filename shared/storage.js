@@ -22,22 +22,22 @@ function generateId() {
 // Initialize storage with defaults if empty
 async function initializeStorage() {
   const data = await chrome.storage.local.get(null);
-  
+
   if (Object.keys(data).length === 0) {
     await chrome.storage.local.set(DEFAULT_STATE);
     return DEFAULT_STATE;
   }
-  
+
   // Ensure all required keys exist
   const updates = {};
   if (data.focusMode === undefined) updates.focusMode = false;
   if (!data.categories) updates.categories = DEFAULT_CATEGORIES;
   if (!data.blockedSites) updates.blockedSites = [];
-  
+
   if (Object.keys(updates).length > 0) {
     await chrome.storage.local.set(updates);
   }
-  
+
   return { ...DEFAULT_STATE, ...data, ...updates };
 }
 
@@ -65,34 +65,34 @@ async function getBlockedSites() {
 
 async function addBlockedSite(domain, category) {
   const sites = await getBlockedSites();
-  
+
   // Check if domain already exists
   const normalizedDomain = normalizeDomain(domain);
   if (sites.some(site => site.domain === normalizedDomain)) {
     throw new Error('Site already blocked');
   }
-  
+
   const newSite = {
     id: generateId(),
     domain: normalizedDomain,
     category: category,
     dateAdded: new Date().toISOString()
   };
-  
+
   sites.push(newSite);
   await chrome.storage.local.set({ blockedSites: sites });
-  
+
   return newSite;
 }
 
 async function removeBlockedSite(siteId) {
   const sites = await getBlockedSites();
   const filteredSites = sites.filter(site => site.id !== siteId);
-  
+
   if (filteredSites.length === sites.length) {
     throw new Error('Site not found');
   }
-  
+
   await chrome.storage.local.set({ blockedSites: filteredSites });
   return true;
 }
@@ -102,7 +102,7 @@ async function isUrlBlocked(url) {
     const urlObj = new URL(url);
     const domain = urlObj.hostname.replace(/^www\./, '');
     const sites = await getBlockedSites();
-    
+
     return sites.find(site => {
       // Check if the URL's domain matches or is a subdomain of the blocked domain
       return domain === site.domain || domain.endsWith('.' + site.domain);
@@ -121,29 +121,29 @@ async function getCategories() {
 async function addCategory(name) {
   const categories = await getCategories();
   const trimmedName = name.trim();
-  
+
   if (!trimmedName) {
     throw new Error('Category name cannot be empty');
   }
-  
+
   if (categories.includes(trimmedName)) {
     throw new Error('Category already exists');
   }
-  
+
   categories.push(trimmedName);
   await chrome.storage.local.set({ categories });
-  
+
   return categories;
 }
 
 async function removeCategory(name) {
   const categories = await getCategories();
   const filteredCategories = categories.filter(cat => cat !== name);
-  
+
   if (filteredCategories.length === categories.length) {
     throw new Error('Category not found');
   }
-  
+
   await chrome.storage.local.set({ categories: filteredCategories });
   return filteredCategories;
 }
@@ -151,16 +151,16 @@ async function removeCategory(name) {
 // Helper functions
 function normalizeDomain(domain) {
   let normalized = domain.toLowerCase().trim();
-  
+
   // Remove protocol if present
   normalized = normalized.replace(/^https?:\/\//, '');
-  
+
   // Remove www. prefix
   normalized = normalized.replace(/^www\./, '');
-  
+
   // Remove trailing slash and path
   normalized = normalized.split('/')[0];
-  
+
   return normalized;
 }
 
@@ -177,14 +177,14 @@ function extractDomain(url) {
 async function getSitesGroupedByCategory() {
   const sites = await getBlockedSites();
   const grouped = {};
-  
+
   sites.forEach(site => {
     if (!grouped[site.category]) {
       grouped[site.category] = [];
     }
     grouped[site.category].push(site);
   });
-  
+
   return grouped;
 }
 
@@ -201,38 +201,38 @@ async function getBlockStats() {
 async function getStatsForPeriod(period) {
   const stats = await getBlockStats();
   const now = new Date();
-  
+
   // Calculate time boundaries
   const boundaries = getPeriodBoundaries(period, now);
-  
+
   // Filter events within the period
   const filtered = stats.filter(e => e.timestamp >= boundaries.start && e.timestamp <= boundaries.end);
-  
+
   // Calculate total
   const total = filtered.length;
-  
+
   // Calculate trend data
   const trend = calculateTrend(filtered, period, now);
-  
+
   // Calculate by category
   const byCategory = {};
   filtered.forEach(e => {
     const cat = e.category || 'Uncategorized';
     byCategory[cat] = (byCategory[cat] || 0) + 1;
   });
-  
+
   // Calculate top sites
   const siteCounts = {};
   filtered.forEach(e => {
     const domain = e.domain || 'unknown';
     siteCounts[domain] = (siteCounts[domain] || 0) + 1;
   });
-  
+
   const topSites = Object.entries(siteCounts)
     .map(([domain, count]) => ({ domain, count }))
     .sort((a, b) => b.count - a.count)
     .slice(0, 5);
-  
+
   return { total, trend, byCategory, topSites };
 }
 
@@ -240,31 +240,29 @@ async function getStatsForPeriod(period) {
 function getPeriodBoundaries(period, now) {
   const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
   const endOfDay = startOfDay + 24 * 60 * 60 * 1000 - 1;
-  
+
   switch (period) {
     case 'day':
       return { start: startOfDay, end: endOfDay };
-    
+
     case 'week': {
-      // Start of week (Sunday)
-      const dayOfWeek = now.getDay();
-      const startOfWeek = startOfDay - dayOfWeek * 24 * 60 * 60 * 1000;
-      const endOfWeek = startOfWeek + 7 * 24 * 60 * 60 * 1000 - 1;
-      return { start: startOfWeek, end: endOfWeek };
+      // Past 7 days (rolling window, including today)
+      const startOfWeek = startOfDay - 6 * 24 * 60 * 60 * 1000;
+      return { start: startOfWeek, end: endOfDay };
     }
-    
+
     case 'month': {
       const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
       const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999).getTime();
       return { start: startOfMonth, end: endOfMonth };
     }
-    
+
     case 'year': {
       const startOfYear = new Date(now.getFullYear(), 0, 1).getTime();
       const endOfYear = new Date(now.getFullYear(), 11, 31, 23, 59, 59, 999).getTime();
       return { start: startOfYear, end: endOfYear };
     }
-    
+
     case 'all':
     default:
       return { start: 0, end: Date.now() };
@@ -298,13 +296,13 @@ function getDaysInMonth(date) {
 function calculateHourlyTrend(events, now) {
   const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
   const hourMs = 60 * 60 * 1000;
-  
+
   const hours = [];
   for (let i = 0; i < 24; i++) {
     const hourStart = startOfDay + i * hourMs;
     const hourEnd = hourStart + hourMs;
     const count = events.filter(e => e.timestamp >= hourStart && e.timestamp < hourEnd).length;
-    
+
     // Format label: 12am, 1am, ..., 12pm, 1pm, ...
     const label = i === 0 ? '12am' : i < 12 ? `${i}am` : i === 12 ? '12pm' : `${i - 12}pm`;
     hours.push({ label, count });
@@ -317,22 +315,21 @@ function calculateDailyTrend(events, now, numDays) {
   const days = [];
   const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
   const dayMs = 24 * 60 * 60 * 1000;
-  
-  // For week: start from Sunday of current week
+
+  // For week: past 7 days (rolling window, including today)
   // For month: start from 1st of current month
   let startDate;
   if (numDays === 7) {
-    const dayOfWeek = now.getDay();
-    startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - dayOfWeek);
+    startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 6);
   } else {
     startDate = new Date(now.getFullYear(), now.getMonth(), 1);
   }
-  
+
   for (let i = 0; i < numDays; i++) {
     const dayStart = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate() + i).getTime();
     const dayEnd = dayStart + dayMs;
     const count = events.filter(e => e.timestamp >= dayStart && e.timestamp < dayEnd).length;
-    
+
     // Label: day name for week, date number for month
     const dayDate = new Date(dayStart);
     const label = numDays === 7 ? dayNames[dayDate.getDay()] : String(dayDate.getDate());
@@ -345,12 +342,12 @@ function calculateDailyTrend(events, now, numDays) {
 function calculateMonthlyTrend(events, now) {
   const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   const months = [];
-  
+
   for (let i = 0; i < 12; i++) {
     const monthStart = new Date(now.getFullYear(), i, 1).getTime();
     const monthEnd = new Date(now.getFullYear(), i + 1, 0, 23, 59, 59, 999).getTime();
     const count = events.filter(e => e.timestamp >= monthStart && e.timestamp <= monthEnd).length;
-    
+
     months.push({ label: monthNames[i], count });
   }
   return months;
@@ -359,31 +356,31 @@ function calculateMonthlyTrend(events, now) {
 // All-time trend (by month, all months since first event)
 function calculateAllTimeTrend(events) {
   if (events.length === 0) return [];
-  
+
   // Find earliest and latest event
   const sorted = [...events].sort((a, b) => a.timestamp - b.timestamp);
   const earliest = new Date(sorted[0].timestamp);
   const latest = new Date(sorted[sorted.length - 1].timestamp);
-  
+
   const months = [];
   let current = new Date(earliest.getFullYear(), earliest.getMonth(), 1);
   const end = new Date(latest.getFullYear(), latest.getMonth() + 1, 0);
-  
+
   while (current <= end) {
     const monthStart = current.getTime();
     const monthEnd = new Date(current.getFullYear(), current.getMonth() + 1, 0, 23, 59, 59, 999).getTime();
     const count = events.filter(e => e.timestamp >= monthStart && e.timestamp <= monthEnd).length;
-    
+
     // Format: "Jan '24"
     const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     const label = `${monthNames[current.getMonth()]} '${String(current.getFullYear()).slice(-2)}`;
-    
+
     months.push({ label, count });
-    
+
     // Move to next month
     current = new Date(current.getFullYear(), current.getMonth() + 1, 1);
   }
-  
+
   return months;
 }
 
