@@ -110,6 +110,37 @@ async function recordBlockEvent(domain, category) {
   }
 }
 
+// Remove recent block event for a domain (called when temporary pass is granted)
+async function removeRecentBlockEvent(domain) {
+  try {
+    const { blockStats = [] } = await chrome.storage.local.get('blockStats');
+    const normalizedDomain = domain.toLowerCase();
+    
+    // Find the most recent block event for this domain (within last 5 minutes)
+    const fiveMinutesAgo = Date.now() - 5 * 60 * 1000;
+    let indexToRemove = -1;
+    
+    for (let i = blockStats.length - 1; i >= 0; i--) {
+      if (blockStats[i].domain === normalizedDomain && blockStats[i].timestamp >= fiveMinutesAgo) {
+        indexToRemove = i;
+        break;
+      }
+    }
+    
+    if (indexToRemove >= 0) {
+      const removed = blockStats.splice(indexToRemove, 1)[0];
+      await chrome.storage.local.set({ blockStats });
+      console.log('Block event removed for temporary allow:', removed);
+      return true;
+    }
+    
+    return false;
+  } catch (e) {
+    console.error('Failed to remove block event:', e);
+    return false;
+  }
+}
+
 // Remove expired temporary allows (and cap list size to avoid unbounded growth).
 async function pruneTemporaryAllows() {
   const { temporaryAllows = [] } = await chrome.storage.local.get('temporaryAllows');
@@ -325,6 +356,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         ].slice(-100);
 
         await chrome.storage.local.set({ temporaryAllows: next });
+        
+        // Remove the recent block event for this domain from stats
+        await removeRecentBlockEvent(domain);
+        
         console.log('Temporary pass granted', { domain, expiresAt, durationMs: clamped, targetUrl });
         sendResponse({ success: true, expiresAt });
       } catch (e) {
