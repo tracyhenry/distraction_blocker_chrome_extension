@@ -1,0 +1,10 @@
+---
+alwaysApply: true
+---
+## Build Output Files - DO NOT EDIT DIRECTLY
+
+### CSS Build Pipeline
+- **Source file:** `src/input.css` - ALWAYS edit this file for CSS changes
+- **Output file:** `styles.css` - AUTO-GENERATED, never edit directly
+- **Build command:** `npm run build:css` - Run after editing input.css
+- **Dev mode:** `npm run dev` - Auto-rebuild on changes
