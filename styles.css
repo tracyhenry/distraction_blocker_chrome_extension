@@ -656,6 +656,10 @@ h6 {
     pointer-events: none
 }
 
+.visible {
+    visibility: visible
+}
+
 .fixed {
     position: fixed
 }
@@ -757,12 +761,16 @@ h6 {
     margin-top: .25rem
 }
 
-.mt-12 {
-    margin-top: 3rem
-}
-
 .mt-2 {
     margin-top: .5rem
+}
+
+.mt-6 {
+    margin-top: 1.5rem
+}
+
+.mt-8 {
+    margin-top: 2rem
 }
 
 .block {
@@ -773,12 +781,20 @@ h6 {
     display: inline-block
 }
 
+.inline {
+    display: inline
+}
+
 .flex {
     display: flex
 }
 
 .inline-flex {
     display: inline-flex
+}
+
+.grid {
+    display: grid
 }
 
 .hidden {
@@ -958,24 +974,12 @@ h6 {
     animation: float 3s ease-in-out infinite
 }
 
-@keyframes slideUp {
-    0% {
-        transform: translateY(10px);
-        opacity: 0
-    }
-
-    to {
-        transform: translateY(0);
-        opacity: 1
-    }
-}
-
-.animate-slide-up {
-    animation: slideUp .3s ease-out
-}
-
 .flex-col {
     flex-direction: column
+}
+
+.flex-wrap {
+    flex-wrap: wrap
 }
 
 .items-center {
@@ -986,8 +990,26 @@ h6 {
     justify-content: center
 }
 
+.justify-between {
+    justify-content: space-between
+}
+
+.gap-1 {
+    gap: .25rem
+}
+
 .gap-2 {
     gap: .5rem
+}
+
+.gap-4 {
+    gap: 1rem
+}
+
+.space-y-0>:not([hidden])~:not([hidden]) {
+    --tw-space-y-reverse: 0;
+    margin-top: calc(0px*(1 - var(--tw-space-y-reverse)));
+    margin-bottom: calc(0px*var(--tw-space-y-reverse))
 }
 
 .space-y-1>:not([hidden])~:not([hidden]) {
@@ -1042,6 +1064,11 @@ h6 {
 .bg-cream {
     --tw-bg-opacity: 1;
     background-color: rgb(255 249 240/var(--tw-bg-opacity, 1))
+}
+
+.bg-gray-100 {
+    --tw-bg-opacity: 1;
+    background-color: rgb(243 244 246/var(--tw-bg-opacity, 1))
 }
 
 .bg-gray-200 {
@@ -1115,6 +1142,11 @@ h6 {
     padding-right: .5rem
 }
 
+.px-4 {
+    padding-left: 1rem;
+    padding-right: 1rem
+}
+
 .px-6 {
     padding-left: 1.5rem;
     padding-right: 1.5rem
@@ -1160,6 +1192,10 @@ h6 {
 
 .text-center {
     text-align: center
+}
+
+.text-right {
+    text-align: right
 }
 
 .font-body {
@@ -1294,7 +1330,11 @@ h6 {
 }
 
 .blur-xl {
-    --tw-blur: blur(24px);
+    --tw-blur: blur(24px)
+}
+
+.blur-xl,
+.filter {
     filter: var(--tw-blur) var(--tw-brightness) var(--tw-contrast) var(--tw-grayscale) var(--tw-hue-rotate) var(--tw-invert) var(--tw-saturate) var(--tw-sepia) var(--tw-drop-shadow)
 }
 
@@ -1306,6 +1346,12 @@ h6 {
 
 .transition-all {
     transition-property: all;
+    transition-timing-function: cubic-bezier(.4, 0, .2, 1);
+    transition-duration: .15s
+}
+
+.transition-colors {
+    transition-property: color, background-color, border-color, text-decoration-color, fill, stroke;
     transition-timing-function: cubic-bezier(.4, 0, .2, 1);
     transition-duration: .15s
 }
@@ -1411,23 +1457,6 @@ h6 {
     color: transparent
 }
 
-.hover\:text-coral-500:hover {
-    --tw-text-opacity: 1;
-    color: rgb(255 107 107/var(--tw-text-opacity, 1))
-}
-
-.group:hover .group-hover\:opacity-100 {
-    opacity: 1
-}
-
-@media (min-width:768px) {
-    .md\:text-5xl {
-        font-size: 3rem;
-        line-height: 1
-    }
-}
-
-/* Stats Tab Styles */
 .stats-tab {
     flex: 1;
     padding: .375rem .5rem;
@@ -1436,33 +1465,12 @@ h6 {
     font-weight: 600;
     text-align: center;
     transition: all .2s;
-    color: rgb(107 114 128);
+    color: #6b7280;
     background: transparent
 }
 
-/* Stats Section Titles */
-.stats-section-title {
-    display: flex;
-    align-items: center;
-    gap: .5rem;
-    font-family: Fredoka, sans-serif;
-    font-size: .9375rem;
-    line-height: 1.25rem;
-    font-weight: 600;
-    color: rgb(44 62 80);
-    margin-bottom: .75rem
-}
-
-.stats-section-subtle {
-    font-family: Nunito, sans-serif;
-    font-size: .75rem;
-    line-height: 1rem;
-    font-weight: 600;
-    color: rgb(107 114 128)
-}
-
 .stats-tab:hover {
-    color: rgb(78 205 196)
+    color: #4ecdc4
 }
 
 .stats-tab-active {
@@ -1473,26 +1481,48 @@ h6 {
     box-shadow: 0 1px 3px rgba(0, 0, 0, .1)
 }
 
-/* Stats Trend Chart Container */
+.stats-section-title {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    font-family: Fredoka, sans-serif;
+    font-size: .9375rem;
+    line-height: 1.25rem;
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: .75rem
+}
+
+.stats-section-subtle {
+    font-family: Nunito, sans-serif;
+    font-size: .75rem;
+    line-height: 1rem;
+    font-weight: 600;
+    color: #6b7280
+}
+
 .stats-trend-container {
-    width: 100%
+    width: 100%;
+    --trend-count: 24
 }
 
 .stats-trend-bars {
-    display: grid;
-    grid-template-columns: repeat(var(--trend-count, 7), 1fr);
     align-items: flex-end;
-    gap: 0;
+    gap: .25rem;
     height: 4rem;
+    margin-bottom: .5rem
+}
+
+.stats-trend-bars,
+.stats-trend-labels {
+    display: grid;
+    grid-template-columns: repeat(var(--trend-count), 1fr);
     width: 100%
 }
 
 .stats-trend-labels {
-    display: grid;
-    grid-template-columns: repeat(var(--trend-count, 7), 1fr);
-    width: 100%;
-    margin-top: .5rem;
-    gap: 0
+    font-size: .75rem;
+    color: #9ca3af
 }
 
 .stats-trend-labels span {
@@ -1500,24 +1530,22 @@ h6 {
     text-align: center
 }
 
-/* Stats Trend Bar */
 .stats-bar {
-    width: 100%;
-    min-width: 2px;
-    border-radius: 2px 2px 0 0;
-    background-color: rgb(78 205 196);
-    transition: height .3s ease
+    border-top-left-radius: .5rem;
+    border-top-right-radius: .5rem;
+    background-color: #4ecdc4;
+    transition: all .3s;
+    min-height: 4px
 }
 
 .stats-bar-empty {
-    background-color: rgb(229 231 235)
+    background-color: #e5e7eb
 }
 
-/* Stats Category Progress Bar */
 .stats-category-bar {
     height: .5rem;
     border-radius: 9999px;
-    background-color: rgb(243 244 246);
+    background-color: #f3f4f6;
     overflow: hidden;
     width: 100%
 }
@@ -1528,7 +1556,7 @@ h6 {
 }
 
 .stats-category-item:hover {
-    background-color: rgb(249 250 251)
+    background-color: #f9fafb
 }
 
 .stats-category-meta {
@@ -1541,7 +1569,7 @@ h6 {
 .stats-category-name {
     font-size: .875rem;
     font-weight: 600;
-    color: rgb(44 62 80);
+    color: #2c3e50;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap
@@ -1550,7 +1578,7 @@ h6 {
 .stats-category-count {
     font-size: .875rem;
     font-weight: 600;
-    color: rgb(107 114 128);
+    color: #6b7280;
     flex-shrink: 0
 }
 
@@ -1561,11 +1589,10 @@ h6 {
 .stats-category-bar-fill {
     height: 100%;
     border-radius: 9999px;
-    background-color: rgb(78 205 196);
+    background-color: #4ecdc4;
     transition: width .3s ease
 }
 
-/* Stats Top Site Item */
 .stats-site-item {
     display: flex;
     align-items: center;
@@ -1576,7 +1603,7 @@ h6 {
 }
 
 .stats-site-item:hover {
-    background-color: rgb(249 250 251)
+    background-color: #f9fafb
 }
 
 .stats-site-rank {
@@ -1593,33 +1620,31 @@ h6 {
 }
 
 .stats-site-rank-1 {
-    background-color: rgb(255 230 109);
-    color: rgb(44 62 80)
+    background-color: #ffe66d;
+    color: #2c3e50
 }
 
 .stats-site-rank-2 {
-    background-color: rgb(209 213 219);
-    color: rgb(44 62 80)
+    background-color: #d1d5db;
+    color: #2c3e50
 }
 
 .stats-site-rank-3 {
-    background-color: rgb(251 191 36);
-    color: rgb(44 62 80)
+    background-color: #fbbf24;
+    color: #2c3e50
 }
 
 .stats-site-rank-default {
-    background-color: rgb(243 244 246);
-    color: rgb(107 114 128)
+    background-color: #f3f4f6;
+    color: #6b7280
 }
 
-/* Stats Section Icons */
 .stats-section-icon {
     width: .875rem;
     height: .875rem;
     flex-shrink: 0
 }
 
-/* Stats Big Number */
 .stats-big-number {
     font-size: 3.5rem;
     line-height: 1;
@@ -1630,4 +1655,39 @@ h6 {
     width: 1.125rem;
     height: 1.125rem;
     flex-shrink: 0
+}
+
+.hover\:bg-white\/10:hover {
+    background-color: hsla(0, 0%, 100%, .1)
+}
+
+.hover\:text-charcoal:hover {
+    --tw-text-opacity: 1;
+    color: rgb(44 62 80/var(--tw-text-opacity, 1))
+}
+
+.hover\:text-coral-500:hover {
+    --tw-text-opacity: 1;
+    color: rgb(255 107 107/var(--tw-text-opacity, 1))
+}
+
+.hover\:text-teal-500:hover {
+    --tw-text-opacity: 1;
+    color: rgb(78 205 196/var(--tw-text-opacity, 1))
+}
+
+.hover\:text-white:hover {
+    --tw-text-opacity: 1;
+    color: rgb(255 255 255/var(--tw-text-opacity, 1))
+}
+
+.group:hover .group-hover\:opacity-100 {
+    opacity: 1
+}
+
+@media (min-width:768px) {
+    .md\:text-5xl {
+        font-size: 3rem;
+        line-height: 1
+    }
 }

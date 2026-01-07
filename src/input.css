@@ -1,3 +1,10 @@
+/* 
+ * ⚠️ OUTPUT FILE (styles.css) IS AUTO-GENERATED - DO NOT EDIT DIRECTLY! ⚠️
+ * 
+ * This source file (src/input.css) is compiled to styles.css
+ * Run: npm run build:css after editing this file
+ */
+
 @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@400;500;600;700&display=swap');
 
 @tailwind base;
@@ -8,58 +15,60 @@
   body {
     @apply font-body text-charcoal;
   }
-  
-  h1, h2, h3, h4, h5, h6 {
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
     @apply font-display;
   }
 }
 
 @layer components {
+
   /* Toggle Switch */
   .toggle-switch {
     @apply relative inline-flex h-8 w-14 cursor-pointer items-center rounded-full transition-colors duration-300;
   }
-  
+
   .toggle-switch-off {
     @apply bg-gray-300;
   }
-  
+
   .toggle-switch-on {
     @apply bg-teal-500;
   }
-  
+
   .toggle-knob {
     @apply absolute h-6 w-6 rounded-full bg-white shadow-md transition-transform duration-300;
   }
-  
+
   .toggle-knob-off {
     @apply left-1;
   }
-  
+
   .toggle-knob-on {
     @apply left-7;
   }
 
   /* Buttons */
   .btn-primary {
-    @apply bg-coral-500 hover:bg-coral-600 text-white font-semibold py-2 px-4 rounded-xl 
-           transition-all duration-200 hover:scale-105 active:scale-95 shadow-md;
+    @apply bg-coral-500 hover:bg-coral-600 text-white font-semibold py-2 px-4 rounded-xl transition-all duration-200 hover:scale-105 active:scale-95 shadow-md;
   }
-  
+
   .btn-secondary {
-    @apply bg-teal-500 hover:bg-teal-600 text-white font-semibold py-2 px-4 rounded-xl 
-           transition-all duration-200 hover:scale-105 active:scale-95 shadow-md;
+    @apply bg-teal-500 hover:bg-teal-600 text-white font-semibold py-2 px-4 rounded-xl transition-all duration-200 hover:scale-105 active:scale-95 shadow-md;
   }
-  
+
   .btn-ghost {
-    @apply bg-transparent hover:bg-gray-100 text-charcoal font-medium py-2 px-4 rounded-xl 
-           transition-all duration-200;
+    @apply bg-transparent hover:bg-gray-100 text-charcoal font-medium py-2 px-4 rounded-xl transition-all duration-200;
   }
 
   /* Category Pills */
   .category-pill {
-    @apply inline-flex items-center px-3 py-1 rounded-full text-sm font-medium 
-           bg-sunny-500 text-charcoal shadow-sm;
+    @apply inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-sunny-500 text-charcoal shadow-sm;
   }
 
   /* Card Styles */
@@ -69,49 +78,45 @@
 
   /* Site Item */
   .site-item {
-    @apply flex items-center justify-between py-2 px-3 rounded-xl hover:bg-gray-50 
-           transition-colors duration-200;
+    @apply flex items-center justify-between py-2 px-3 rounded-xl hover:bg-gray-50 transition-colors duration-200;
   }
 
   /* Input Styles */
   .input-field {
-    @apply w-full px-4 py-2 rounded-xl border-2 border-gray-200 
-           focus:border-teal-500 focus:outline-none transition-colors duration-200;
+    @apply w-full px-4 py-2 rounded-xl border-2 border-gray-200 focus:border-teal-500 focus:outline-none transition-colors duration-200;
   }
 
   /* Select Dropdown */
   .select-field {
-    @apply w-full px-4 py-2 rounded-xl border-2 border-gray-200 bg-white
-           focus:border-teal-500 focus:outline-none transition-colors duration-200
-           appearance-none cursor-pointer;
+    @apply w-full px-4 py-2 rounded-xl border-2 border-gray-200 bg-white focus:border-teal-500 focus:outline-none transition-colors duration-200 appearance-none cursor-pointer;
   }
 
   /* Collapsible Category Header */
   .category-header {
-    @apply flex items-center justify-between py-2 px-3 rounded-xl cursor-pointer
-           hover:bg-gray-50 transition-colors duration-200 font-display font-semibold;
+    @apply flex items-center justify-between py-2 px-3 rounded-xl cursor-pointer hover:bg-gray-50 transition-colors duration-200 font-display font-semibold;
   }
 
   /* Tab Buttons */
   .tab-btn {
     @apply border-b-2 border-transparent hover:text-teal-500 transition-all duration-200;
   }
-  
+
   .tab-active {
     @apply text-teal-600 border-b-2 border-teal-500;
   }
 }
 
 @layer utilities {
+
   /* Custom scrollbar */
   .scrollbar-thin::-webkit-scrollbar {
     width: 6px;
   }
-  
+
   .scrollbar-thin::-webkit-scrollbar-track {
     @apply bg-gray-100 rounded-full;
   }
-  
+
   .scrollbar-thin::-webkit-scrollbar-thumb {
     @apply bg-gray-300 rounded-full hover:bg-gray-400;
   }
@@ -123,6 +128,7 @@
     transform: translateY(0) rotate(0deg) scale(1);
     opacity: 1;
   }
+
   100% {
     transform: translateY(-100px) rotate(720deg) scale(0);
     opacity: 0;
@@ -135,9 +141,12 @@
 
 /* Success pulse for buttons */
 @keyframes success-pulse {
-  0%, 100% {
+
+  0%,
+  100% {
     box-shadow: 0 0 0 0 rgba(78, 205, 196, 0.4);
   }
+
   50% {
     box-shadow: 0 0 0 10px rgba(78, 205, 196, 0);
   }
@@ -149,9 +158,19 @@
 
 /* Shake animation for errors */
 @keyframes shake {
-  0%, 100% { transform: translateX(0); }
-  25% { transform: translateX(-5px); }
-  75% { transform: translateX(5px); }
+
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+
+  25% {
+    transform: translateX(-5px);
+  }
+
+  75% {
+    transform: translateX(5px);
+  }
 }
 
 .animate-shake {
@@ -170,108 +189,209 @@
 
 /* ============ Stats Styles ============ */
 
-/* Stats Tabs */
+/* Stats Tab Styles */
 .stats-tab {
-  @apply flex-1 py-2 text-sm font-semibold text-center rounded-lg transition-all duration-200;
-  @apply text-gray-500 hover:text-charcoal;
+  flex: 1;
+  padding: 0.375rem 0.5rem;
+  border-radius: 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-align: center;
+  transition: all 0.2s;
+  color: rgb(107 114 128);
+  background: transparent;
+}
+
+.stats-tab:hover {
+  color: rgb(78 205 196);
 }
 
 .stats-tab-active {
-  @apply bg-white text-charcoal shadow-sm;
-}
-
-/* Stats Big Number */
-.stats-big-number {
-  @apply text-5xl font-bold;
+  --tw-bg-opacity: 1;
+  background-color: rgb(255 255 255 / var(--tw-bg-opacity, 1));
+  --tw-text-opacity: 1;
+  color: rgb(78 205 196 / var(--tw-text-opacity, 1));
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 /* Stats Section Titles */
 .stats-section-title {
-  @apply flex items-center gap-2 font-display font-semibold text-charcoal mb-3;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: Fredoka, sans-serif;
+  font-size: 0.9375rem;
+  line-height: 1.25rem;
+  font-weight: 600;
+  color: rgb(44 62 80);
+  margin-bottom: 0.75rem;
 }
 
-.stats-section-icon-lg {
-  @apply w-5 h-5 text-teal-500;
+.stats-section-subtle {
+  font-family: Nunito, sans-serif;
+  font-size: 0.75rem;
+  line-height: 1rem;
+  font-weight: 600;
+  color: rgb(107 114 128);
 }
 
-/* Stats Trend Chart */
+/* Stats Trend Chart Container */
 .stats-trend-container {
-  @apply w-full;
-  --trend-count: 24; /* Default for hourly view */
+  width: 100%;
+  --trend-count: 24;
 }
 
 .stats-trend-bars {
-  @apply flex items-end justify-between gap-1 w-full h-32 mb-2;
   display: grid;
   grid-template-columns: repeat(var(--trend-count), 1fr);
+  align-items: flex-end;
+  gap: 0.25rem;
+  height: 4rem;
+  width: 100%;
+  margin-bottom: 0.5rem;
 }
 
 .stats-trend-labels {
-  @apply flex justify-between w-full text-xs text-gray-400;
   display: grid;
   grid-template-columns: repeat(var(--trend-count), 1fr);
+  width: 100%;
+  font-size: 0.75rem;
+  color: rgb(156 163 175);
 }
 
+.stats-trend-labels span {
+  width: 100%;
+  text-align: center;
+}
+
+/* Stats Trend Bar */
 .stats-bar {
-  @apply bg-teal-500 rounded-t-lg transition-all duration-300;
+  border-top-left-radius: 0.5rem;
+  border-top-right-radius: 0.5rem;
+  background-color: rgb(78 205 196);
+  transition: all 0.3s;
   min-height: 4px;
 }
 
 .stats-bar-empty {
-  @apply bg-gray-200;
+  background-color: rgb(229 231 235);
 }
 
-/* Stats Category Breakdown */
+/* Stats Category Progress Bar */
+.stats-category-bar {
+  height: 0.5rem;
+  border-radius: 9999px;
+  background-color: rgb(243 244 246);
+  overflow: hidden;
+  width: 100%;
+}
+
 .stats-category-item {
-  @apply py-2;
+  padding: 0.25rem 0.375rem;
+  border-radius: 0.5rem;
+}
+
+.stats-category-item:hover {
+  background-color: rgb(249 250 251);
 }
 
 .stats-category-meta {
-  @apply flex justify-between items-center mb-1;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
 }
 
 .stats-category-name {
-  @apply text-sm font-medium text-charcoal;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: rgb(44 62 80);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .stats-category-count {
-  @apply text-sm font-semibold text-teal-600;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: rgb(107 114 128);
+  flex-shrink: 0;
 }
 
 .stats-category-bar-wrap {
-  @apply w-full;
-}
-
-.stats-category-bar {
-  @apply w-full h-2 bg-gray-100 rounded-full overflow-hidden;
+  margin-top: 0.25rem;
 }
 
 .stats-category-bar-fill {
-  @apply h-full bg-teal-500 rounded-full transition-all duration-300;
+  height: 100%;
+  border-radius: 9999px;
+  background-color: rgb(78 205 196);
+  transition: width 0.3s ease;
 }
 
-/* Stats Top Sites */
+/* Stats Top Site Item */
 .stats-site-item {
-  @apply flex items-center justify-between py-2 px-3 rounded-xl hover:bg-gray-50 transition-colors duration-200;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.375rem 0.5rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+}
+
+.stats-site-item:hover {
+  background-color: rgb(249 250 251);
 }
 
 .stats-site-rank {
-  @apply w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold mr-2 flex-shrink-0;
-}
-
-.stats-site-rank-default {
-  @apply bg-gray-200 text-gray-600;
+  width: 1.25rem;
+  height: 1.25rem;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  font-size: 0.625rem;
+  font-weight: 700;
+  margin-right: 0.5rem;
 }
 
 .stats-site-rank-1 {
-  @apply bg-sunny-500 text-charcoal;
+  background-color: rgb(255 230 109);
+  color: rgb(44 62 80);
 }
 
 .stats-site-rank-2 {
-  @apply bg-gray-300 text-charcoal;
+  background-color: rgb(209 213 219);
+  color: rgb(44 62 80);
 }
 
 .stats-site-rank-3 {
-  @apply bg-coral-400 text-white;
+  background-color: rgb(251 191 36);
+  color: rgb(44 62 80);
 }
 
+.stats-site-rank-default {
+  background-color: rgb(243 244 246);
+  color: rgb(107 114 128);
+}
+
+/* Stats Section Icons */
+.stats-section-icon {
+  width: 0.875rem;
+  height: 0.875rem;
+  flex-shrink: 0;
+}
+
+/* Stats Big Number */
+.stats-big-number {
+  font-size: 3.5rem;
+  line-height: 1;
+  font-weight: 700;
+}
+
+.stats-section-icon-lg {
+  width: 1.125rem;
+  height: 1.125rem;
+  flex-shrink: 0;
+}
