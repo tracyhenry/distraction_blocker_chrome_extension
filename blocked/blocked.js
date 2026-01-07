@@ -111,6 +111,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const cancelPassBtn = document.getElementById('cancelPassBtn');
     const confirmPassBtn = document.getElementById('confirmPassBtn');
     const reasonInput = document.getElementById('passReasonInput');
+    const reasonHintEl = document.getElementById('passReasonHint');
     const errorEl = document.getElementById('passError');
     const durationBtns = Array.from(document.querySelectorAll('.durationBtn'));
 
@@ -118,6 +119,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let selectedDurationMs = 300000; // default 5 minutes
     let modalOpen = false;
+
+    function stripTrailingPunctuation(text) {
+        return String(text || '').trim().replace(/[.!?,"'”’]+$/g, '').trim();
+    }
+
+    function normalizeForSuffixCheck(text) {
+        // Lowercase, trim, and ignore a little trailing punctuation so users can end with a period.
+        return stripTrailingPunctuation(text).toLowerCase();
+    }
+
+    function requiredSuffixForDuration(durationMs) {
+        if (durationMs === 30 * 60_000) return 'i really need 30 minutes';
+        if (durationMs === 60 * 60_000) return 'i really need 1 hour';
+        return null;
+    }
 
     function showError(msg) {
         if (!errorEl) return;
@@ -146,11 +162,38 @@ document.addEventListener('DOMContentLoaded', () => {
         return text.trim().split(/\s+/).filter(w => w.length > 0).length;
     }
 
+    function hasExactFiveWordsPlusSuffix(reason, requiredSuffix) {
+        const stripped = stripTrailingPunctuation(reason);
+        const lower = stripped.toLowerCase();
+
+        if (!lower.endsWith(requiredSuffix)) return false;
+
+        const suffixStart = lower.length - requiredSuffix.length;
+        // Must be "...<space><suffix>" with exactly one space before suffix.
+        if (suffixStart <= 0) return false;
+        if (lower[suffixStart - 1] !== ' ') return false;
+        if (suffixStart - 2 >= 0 && lower[suffixStart - 2] === ' ') return false;
+
+        const prefix = lower.slice(0, suffixStart - 1).trim();
+        return countWords(prefix) === 5;
+    }
+
     function validateReason() {
         const reason = (reasonInput?.value || '').trim();
-        const wordCount = countWords(reason);
-        setConfirmEnabled(wordCount >= 5);
-        if (wordCount >= 5) showError('');
+        const requiredSuffix = requiredSuffixForDuration(selectedDurationMs);
+        const ok = requiredSuffix
+            ? hasExactFiveWordsPlusSuffix(reason, requiredSuffix)
+            : countWords(reason) >= 5;
+
+        // Update the helper hint based on duration selection
+        if (reasonHintEl) {
+            reasonHintEl.textContent = requiredSuffix
+                ? `Minimum 5 words, plus the ending phrase: "${requiredSuffix}".`
+                : 'Minimum 5 words.';
+        }
+
+        setConfirmEnabled(ok);
+        if (ok) showError('');
     }
 
     function openModal() {
@@ -172,8 +215,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function confirmPass() {
         const reason = (reasonInput?.value || '').trim();
-        const wordCount = countWords(reason);
-        if (wordCount < 5) {
+        const requiredSuffix = requiredSuffixForDuration(selectedDurationMs);
+        if (requiredSuffix) {
+            if (!hasExactFiveWordsPlusSuffix(reason, requiredSuffix)) {
+                showError(`For ${selectedDurationMs === 30 * 60_000 ? '30 min' : '1 hour'}, write exactly 5 words, then a space, then "${requiredSuffix}".`);
+                setConfirmEnabled(false);
+                return;
+            }
+        } else if (countWords(reason) < 5) {
             showError('Please write a reason with at least 5 words.');
             setConfirmEnabled(false);
             return;
@@ -217,6 +266,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (Number.isFinite(ms) && ms > 0) {
                 selectedDurationMs = ms;
                 updateDurationButtonStyles();
+                validateReason();
             }
         });
     });

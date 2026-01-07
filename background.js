@@ -100,7 +100,7 @@ async function recordBlockEvent(domain, category) {
       domain: domain.toLowerCase(),
       category: category || 'Uncategorized'
     };
-    
+
     // Keep last 10,000 events to prevent unbounded growth
     const updated = [...blockStats, event].slice(-10000);
     await chrome.storage.local.set({ blockStats: updated });
@@ -115,25 +115,25 @@ async function removeRecentBlockEvent(domain) {
   try {
     const { blockStats = [] } = await chrome.storage.local.get('blockStats');
     const normalizedDomain = domain.toLowerCase();
-    
+
     // Find the most recent block event for this domain (within last 5 minutes)
     const fiveMinutesAgo = Date.now() - 5 * 60 * 1000;
     let indexToRemove = -1;
-    
+
     for (let i = blockStats.length - 1; i >= 0; i--) {
       if (blockStats[i].domain === normalizedDomain && blockStats[i].timestamp >= fiveMinutesAgo) {
         indexToRemove = i;
         break;
       }
     }
-    
+
     if (indexToRemove >= 0) {
       const removed = blockStats.splice(indexToRemove, 1)[0];
       await chrome.storage.local.set({ blockStats });
       console.log('Block event removed for temporary allow:', removed);
       return true;
     }
-    
+
     return false;
   } catch (e) {
     console.error('Failed to remove block event:', e);
@@ -335,16 +335,62 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           return;
         }
 
+        // Clamp duration: 1 min .. 60 min (default 5 min)
+        const clamped = Number.isFinite(durationMs) ? Math.max(60_000, Math.min(60 * 60_000, durationMs)) : 5 * 60_000;
+
+        // Extra friction for longer passes.
+        // If the user asks for 30 min or 1 hour, they must end their reason with a specific phrase.
+        const countWords = (text) => String(text || '').trim().split(/\s+/).filter(w => w.length > 0).length;
+
         // Reason is the "intentional friction" piece. Keep it required.
-        // Count words (split by whitespace, filter empty strings)
-        const wordCount = reason.split(/\s+/).filter(w => w.length > 0).length;
-        if (wordCount < 5) {
+        // Base rule: at least 5 words for all durations.
+        const baseWordCount = countWords(reason);
+        if (baseWordCount < 5) {
           sendResponse({ success: false, error: 'Reason must be at least 5 words' });
           return;
         }
 
-        // Clamp duration: 1 min .. 30 min (default 5 min)
-        const clamped = Number.isFinite(durationMs) ? Math.max(60_000, Math.min(30 * 60_000, durationMs)) : 5 * 60_000;
+        const normalizeForSuffixCheck = (text) => String(text || '')
+          .trim()
+          .toLowerCase()
+          .replace(/[.!?,"'”’]+$/g, '')
+          .trim();
+
+        const requiredSuffix =
+          clamped === 30 * 60_000 ? 'i really need 30 minutes' :
+          clamped === 60 * 60_000 ? 'i really need 1 hour' :
+          null;
+
+        const normalizedReason = normalizeForSuffixCheck(reason);
+        if (requiredSuffix) {
+          // Must be "...<space><suffix>" with exactly one space before suffix, and exactly 5 words before it.
+          if (!normalizedReason.endsWith(requiredSuffix)) {
+            sendResponse({
+              success: false,
+              error: `For ${clamped === 30 * 60_000 ? '30 min' : '1 hour'}, write exactly 5 words, then a space, then "${requiredSuffix}".`
+            });
+            return;
+          }
+
+          const suffixStart = normalizedReason.length - requiredSuffix.length;
+          if (suffixStart <= 0 || normalizedReason[suffixStart - 1] !== ' ' || (suffixStart - 2 >= 0 && normalizedReason[suffixStart - 2] === ' ')) {
+            sendResponse({
+              success: false,
+              error: `For ${clamped === 30 * 60_000 ? '30 min' : '1 hour'}, write exactly 5 words, then a space, then "${requiredSuffix}".`
+            });
+            return;
+          }
+
+          const prefix = normalizedReason.slice(0, suffixStart - 1).trim();
+          const prefixWordCount = countWords(prefix);
+          if (prefixWordCount !== 5) {
+            sendResponse({
+              success: false,
+              error: `For ${clamped === 30 * 60_000 ? '30 min' : '1 hour'}, write exactly 5 words, then a space, then "${requiredSuffix}".`
+            });
+            return;
+          }
+        }
 
         const { temporaryAllows = [] } = await chrome.storage.local.get('temporaryAllows');
         const now = Date.now();
@@ -356,10 +402,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         ].slice(-100);
 
         await chrome.storage.local.set({ temporaryAllows: next });
-        
+
         // Remove the recent block event for this domain from stats
         await removeRecentBlockEvent(domain);
-        
+
         console.log('Temporary pass granted', { domain, expiresAt, durationMs: clamped, targetUrl });
         sendResponse({ success: true, expiresAt });
       } catch (e) {
