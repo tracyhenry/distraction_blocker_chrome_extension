@@ -358,8 +358,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
         const requiredSuffix =
           clamped === 30 * 60_000 ? 'i really need 30 minutes' :
-          clamped === 60 * 60_000 ? 'i really need 1 hour' :
-          null;
+            clamped === 60 * 60_000 ? 'i really need 1 hour' :
+              null;
 
         const normalizedReason = normalizeForSuffixCheck(reason);
         if (requiredSuffix) {

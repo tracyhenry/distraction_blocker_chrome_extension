@@ -65,6 +65,20 @@ function isLikelyHttpUrl(url) {
     return typeof url === 'string' && (url.startsWith('http://') || url.startsWith('https://'));
 }
 
+function getSiteDisplayName(domain, url) {
+    const cleaned = typeof domain === 'string' ? domain.trim() : '';
+    if (cleaned && cleaned !== 'Unknown site') return cleaned;
+    if (isLikelyHttpUrl(url)) {
+        try {
+            const host = new URL(url).hostname;
+            if (host) return host.replace(/^www\./, '');
+        } catch {
+            // ignore
+        }
+    }
+    return 'this site';
+}
+
 function setElHidden(el, hidden) {
     if (!el) return;
     el.classList.toggle('hidden', hidden);
@@ -85,13 +99,18 @@ function makeSendMessagePromise() {
 document.addEventListener('DOMContentLoaded', () => {
     const { domain, category, url } = getUrlParams();
     const message = getRandomMessage();
+    const siteName = getSiteDisplayName(domain, url);
 
     // Update message
     document.getElementById('message').textContent = message.main;
     document.getElementById('submessage').textContent = message.sub;
 
     // Update blocked domain
-    document.getElementById('blockedDomain').textContent = domain;
+    document.getElementById('blockedDomain').textContent = siteName;
+
+    // Update quick exception modal website label
+    const passDomainEl = document.getElementById('passDomain');
+    if (passDomainEl) passDomainEl.textContent = siteName;
 
     // Show category badge if available
     if (category) {
