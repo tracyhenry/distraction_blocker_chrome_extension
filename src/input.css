@@ -168,3 +168,110 @@
   @apply bg-gradient-to-r from-coral-500 to-teal-500 bg-clip-text text-transparent;
 }
 
+/* ============ Stats Styles ============ */
+
+/* Stats Tabs */
+.stats-tab {
+  @apply flex-1 py-2 text-sm font-semibold text-center rounded-lg transition-all duration-200;
+  @apply text-gray-500 hover:text-charcoal;
+}
+
+.stats-tab-active {
+  @apply bg-white text-charcoal shadow-sm;
+}
+
+/* Stats Big Number */
+.stats-big-number {
+  @apply text-5xl font-bold;
+}
+
+/* Stats Section Titles */
+.stats-section-title {
+  @apply flex items-center gap-2 font-display font-semibold text-charcoal mb-3;
+}
+
+.stats-section-icon-lg {
+  @apply w-5 h-5 text-teal-500;
+}
+
+/* Stats Trend Chart */
+.stats-trend-container {
+  @apply w-full;
+  --trend-count: 24; /* Default for hourly view */
+}
+
+.stats-trend-bars {
+  @apply flex items-end justify-between gap-1 w-full h-32 mb-2;
+  display: grid;
+  grid-template-columns: repeat(var(--trend-count), 1fr);
+}
+
+.stats-trend-labels {
+  @apply flex justify-between w-full text-xs text-gray-400;
+  display: grid;
+  grid-template-columns: repeat(var(--trend-count), 1fr);
+}
+
+.stats-bar {
+  @apply bg-teal-500 rounded-t-lg transition-all duration-300;
+  min-height: 4px;
+}
+
+.stats-bar-empty {
+  @apply bg-gray-200;
+}
+
+/* Stats Category Breakdown */
+.stats-category-item {
+  @apply py-2;
+}
+
+.stats-category-meta {
+  @apply flex justify-between items-center mb-1;
+}
+
+.stats-category-name {
+  @apply text-sm font-medium text-charcoal;
+}
+
+.stats-category-count {
+  @apply text-sm font-semibold text-teal-600;
+}
+
+.stats-category-bar-wrap {
+  @apply w-full;
+}
+
+.stats-category-bar {
+  @apply w-full h-2 bg-gray-100 rounded-full overflow-hidden;
+}
+
+.stats-category-bar-fill {
+  @apply h-full bg-teal-500 rounded-full transition-all duration-300;
+}
+
+/* Stats Top Sites */
+.stats-site-item {
+  @apply flex items-center justify-between py-2 px-3 rounded-xl hover:bg-gray-50 transition-colors duration-200;
+}
+
+.stats-site-rank {
+  @apply w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold mr-2 flex-shrink-0;
+}
+
+.stats-site-rank-default {
+  @apply bg-gray-200 text-gray-600;
+}
+
+.stats-site-rank-1 {
+  @apply bg-sunny-500 text-charcoal;
+}
+
+.stats-site-rank-2 {
+  @apply bg-gray-300 text-charcoal;
+}
+
+.stats-site-rank-3 {
+  @apply bg-coral-400 text-white;
+}
+
