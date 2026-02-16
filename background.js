@@ -363,11 +363,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
         const normalizedReason = normalizeForSuffixCheck(reason);
         if (requiredSuffix) {
-          // Must be "...<space><suffix>" with exactly one space before suffix, and exactly 5 words before it.
+          // Must be "...<space><suffix>" with exactly one space before suffix, and at least 5 words before it.
           if (!normalizedReason.endsWith(requiredSuffix)) {
             sendResponse({
               success: false,
-              error: `For ${clamped === 30 * 60_000 ? '30 min' : '1 hour'}, write exactly 5 words, then a space, then "${requiredSuffix}".`
+              error: `For ${clamped === 30 * 60_000 ? '30 min' : '1 hour'}, write at least 5 words, then a space, then "${requiredSuffix}".`
             });
             return;
           }
@@ -376,17 +376,17 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           if (suffixStart <= 0 || normalizedReason[suffixStart - 1] !== ' ' || (suffixStart - 2 >= 0 && normalizedReason[suffixStart - 2] === ' ')) {
             sendResponse({
               success: false,
-              error: `For ${clamped === 30 * 60_000 ? '30 min' : '1 hour'}, write exactly 5 words, then a space, then "${requiredSuffix}".`
+              error: `For ${clamped === 30 * 60_000 ? '30 min' : '1 hour'}, write at least 5 words, then a space, then "${requiredSuffix}".`
             });
             return;
           }
 
           const prefix = normalizedReason.slice(0, suffixStart - 1).trim();
           const prefixWordCount = countWords(prefix);
-          if (prefixWordCount !== 5) {
+          if (prefixWordCount < 5) {
             sendResponse({
               success: false,
-              error: `For ${clamped === 30 * 60_000 ? '30 min' : '1 hour'}, write exactly 5 words, then a space, then "${requiredSuffix}".`
+              error: `For ${clamped === 30 * 60_000 ? '30 min' : '1 hour'}, write at least 5 words, then a space, then "${requiredSuffix}".`
             });
             return;
           }

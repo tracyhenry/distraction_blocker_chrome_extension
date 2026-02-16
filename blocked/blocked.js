@@ -194,7 +194,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (suffixStart - 2 >= 0 && lower[suffixStart - 2] === ' ') return false;
 
         const prefix = lower.slice(0, suffixStart - 1).trim();
-        return countWords(prefix) === 5;
+        return countWords(prefix) >= 5;
     }
 
     function validateReason() {
@@ -207,7 +207,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Update the helper hint based on duration selection
         if (reasonHintEl) {
             reasonHintEl.textContent = requiredSuffix
-                ? `Minimum 5 words, plus the ending phrase: "${requiredSuffix}".`
+                ? `At least 5 words, plus the ending phrase: "${requiredSuffix}".`
                 : 'Minimum 5 words.';
         }
 
@@ -237,7 +237,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const requiredSuffix = requiredSuffixForDuration(selectedDurationMs);
         if (requiredSuffix) {
             if (!hasExactFiveWordsPlusSuffix(reason, requiredSuffix)) {
-                showError(`For ${selectedDurationMs === 30 * 60_000 ? '30 min' : '1 hour'}, write exactly 5 words, then a space, then "${requiredSuffix}".`);
+                showError(`For ${selectedDurationMs === 30 * 60_000 ? '30 min' : '1 hour'}, write at least 5 words, then a space, then "${requiredSuffix}".`);
                 setConfirmEnabled(false);
                 return;
             }
