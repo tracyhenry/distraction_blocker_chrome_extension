@@ -21,8 +21,11 @@ function getUrlParams() {
     const params = new URLSearchParams(window.location.search);
     return {
         domain: params.get('domain') || 'Unknown site',
+        // Path prefix of the blocked entry; empty means the whole domain.
+        path: params.get('path') || '',
         category: params.get('category') || null,
-        url: params.get('url') || null
+        url: params.get('url') || null,
+        keyword: params.get('keyword') || null
     };
 }
 
@@ -65,9 +68,9 @@ function isLikelyHttpUrl(url) {
     return typeof url === 'string' && (url.startsWith('http://') || url.startsWith('https://'));
 }
 
-function getSiteDisplayName(domain, url) {
+function getSiteDisplayName(domain, path, url) {
     const cleaned = typeof domain === 'string' ? domain.trim() : '';
-    if (cleaned && cleaned !== 'Unknown site') return cleaned;
+    if (cleaned && cleaned !== 'Unknown site') return `${cleaned}${path || ''}`;
     if (isLikelyHttpUrl(url)) {
         try {
             const host = new URL(url).hostname;
@@ -97,20 +100,26 @@ function makeSendMessagePromise() {
 
 // Initialize page
 document.addEventListener('DOMContentLoaded', () => {
-    const { domain, category, url } = getUrlParams();
+    const { domain, path, category, url, keyword } = getUrlParams();
     const message = getRandomMessage();
-    const siteName = getSiteDisplayName(domain, url);
+
+    // For keyword blocks, show the search term ("nba games"); otherwise the site
+    // name, including the path when only a specific page is blocked.
+    const isKeywordBlock = !!keyword;
+    const displayName = isKeywordBlock ? `"${keyword}"` : getSiteDisplayName(domain, path, url);
 
     // Update message
     document.getElementById('message').textContent = message.main;
     document.getElementById('submessage').textContent = message.sub;
 
-    // Update blocked domain
-    document.getElementById('blockedDomain').textContent = siteName;
+    // Update blocked label ("Blocked:" -> "Search:") and value
+    const blockedLabelEl = document.getElementById('blockedLabel');
+    if (blockedLabelEl) blockedLabelEl.textContent = isKeywordBlock ? 'Search:' : 'Blocked:';
+    document.getElementById('blockedDomain').textContent = displayName;
 
     // Update quick exception modal website label
     const passDomainEl = document.getElementById('passDomain');
-    if (passDomainEl) passDomainEl.textContent = siteName;
+    if (passDomainEl) passDomainEl.textContent = displayName;
 
     // Show category badge if available
     if (category) {
@@ -123,14 +132,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const backBtn = document.getElementById('backToWorkBtn');
     if (backBtn) backBtn.addEventListener('click', goBack);
 
-    // --- Option B: intentional temporary pass modal ---
+    // --- Temporary pass modal (one-tap duration, no typing) ---
     const passModal = document.getElementById('passModal');
     const openPassModalBtn = document.getElementById('openPassModalBtn');
     const closePassModalBtn = document.getElementById('closePassModalBtn');
     const cancelPassBtn = document.getElementById('cancelPassBtn');
     const confirmPassBtn = document.getElementById('confirmPassBtn');
-    const reasonInput = document.getElementById('passReasonInput');
-    const reasonHintEl = document.getElementById('passReasonHint');
     const errorEl = document.getElementById('passError');
     const durationBtns = Array.from(document.querySelectorAll('.durationBtn'));
 
@@ -138,21 +145,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let selectedDurationMs = 300000; // default 5 minutes
     let modalOpen = false;
-
-    function stripTrailingPunctuation(text) {
-        return String(text || '').trim().replace(/[.!?,"'”’]+$/g, '').trim();
-    }
-
-    function normalizeForSuffixCheck(text) {
-        // Lowercase, trim, and ignore a little trailing punctuation so users can end with a period.
-        return stripTrailingPunctuation(text).toLowerCase();
-    }
-
-    function requiredSuffixForDuration(durationMs) {
-        if (durationMs === 30 * 60_000) return 'i really need 30 minutes';
-        if (durationMs === 60 * 60_000) return 'i really need 1 hour';
-        return null;
-    }
 
     function showError(msg) {
         if (!errorEl) return;
@@ -177,51 +169,14 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    function countWords(text) {
-        return text.trim().split(/\s+/).filter(w => w.length > 0).length;
-    }
-
-    function hasExactFiveWordsPlusSuffix(reason, requiredSuffix) {
-        const stripped = stripTrailingPunctuation(reason);
-        const lower = stripped.toLowerCase();
-
-        if (!lower.endsWith(requiredSuffix)) return false;
-
-        const suffixStart = lower.length - requiredSuffix.length;
-        // Must be "...<space><suffix>" with exactly one space before suffix.
-        if (suffixStart <= 0) return false;
-        if (lower[suffixStart - 1] !== ' ') return false;
-        if (suffixStart - 2 >= 0 && lower[suffixStart - 2] === ' ') return false;
-
-        const prefix = lower.slice(0, suffixStart - 1).trim();
-        return countWords(prefix) >= 5;
-    }
-
-    function validateReason() {
-        const reason = (reasonInput?.value || '').trim();
-        const requiredSuffix = requiredSuffixForDuration(selectedDurationMs);
-        const ok = requiredSuffix
-            ? hasExactFiveWordsPlusSuffix(reason, requiredSuffix)
-            : countWords(reason) >= 5;
-
-        // Update the helper hint based on duration selection
-        if (reasonHintEl) {
-            reasonHintEl.textContent = requiredSuffix
-                ? `At least 5 words, plus the ending phrase: "${requiredSuffix}".`
-                : 'Minimum 5 words.';
-        }
-
-        setConfirmEnabled(ok);
-        if (ok) showError('');
-    }
-
     function openModal() {
         if (!passModal) return;
         modalOpen = true;
         setElHidden(passModal, false);
         updateDurationButtonStyles();
-        validateReason();
-        setTimeout(() => reasonInput?.focus(), 0);
+        showError('');
+        setConfirmEnabled(true);
+        setTimeout(() => confirmPassBtn?.focus(), 0);
     }
 
     function closeModal() {
@@ -233,31 +188,20 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function confirmPass() {
-        const reason = (reasonInput?.value || '').trim();
-        const requiredSuffix = requiredSuffixForDuration(selectedDurationMs);
-        if (requiredSuffix) {
-            if (!hasExactFiveWordsPlusSuffix(reason, requiredSuffix)) {
-                showError(`For ${selectedDurationMs === 30 * 60_000 ? '30 min' : '1 hour'}, write at least 5 words, then a space, then "${requiredSuffix}".`);
-                setConfirmEnabled(false);
-                return;
-            }
-        } else if (countWords(reason) < 5) {
-            showError('Please write a reason with at least 5 words.');
-            setConfirmEnabled(false);
-            return;
-        }
-
         setConfirmEnabled(false);
         if (confirmPassBtn) confirmPassBtn.textContent = 'Allowing…';
         showError('');
 
+        // For keyword blocks, `url` is the original search URL and the pass is
+        // scoped to the keyword only (not the whole search engine).
         const targetUrl = isLikelyHttpUrl(url) ? url : (domain && domain !== 'Unknown site' ? `https://${domain}` : null);
 
         const resp = await sendMessage({
             action: 'grantTemporaryPass',
-            domain,
+            domain: keyword ? null : domain,
+            path: keyword ? null : path,
+            keyword: keyword || null,
             durationMs: selectedDurationMs,
-            reason,
             targetUrl
         });
 
@@ -276,7 +220,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (openPassModalBtn) openPassModalBtn.addEventListener('click', openModal);
     if (closePassModalBtn) closePassModalBtn.addEventListener('click', closeModal);
     if (cancelPassBtn) cancelPassBtn.addEventListener('click', closeModal);
-    if (reasonInput) reasonInput.addEventListener('input', validateReason);
     if (confirmPassBtn) confirmPassBtn.addEventListener('click', confirmPass);
 
     durationBtns.forEach((btn) => {
@@ -285,7 +228,6 @@ document.addEventListener('DOMContentLoaded', () => {
             if (Number.isFinite(ms) && ms > 0) {
                 selectedDurationMs = ms;
                 updateDurationButtonStyles();
-                validateReason();
             }
         });
     });
