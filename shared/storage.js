@@ -11,7 +11,8 @@ const DEFAULT_CATEGORIES = [
 const DEFAULT_STATE = {
   focusMode: false,
   categories: DEFAULT_CATEGORIES,
-  blockedSites: []
+  blockedSites: [],
+  blockedKeywords: []
 };
 
 // Generate a unique ID
@@ -33,6 +34,7 @@ async function initializeStorage() {
   if (data.focusMode === undefined) updates.focusMode = false;
   if (!data.categories) updates.categories = DEFAULT_CATEGORIES;
   if (!data.blockedSites) updates.blockedSites = [];
+  if (!data.blockedKeywords) updates.blockedKeywords = [];
 
   if (Object.keys(updates).length > 0) {
     await chrome.storage.local.set(updates);
@@ -63,18 +65,26 @@ async function getBlockedSites() {
   return blockedSites ?? [];
 }
 
-async function addBlockedSite(domain, category) {
+// `target` is either a bare domain ("reddit.com") or a domain plus a path
+// ("github.com/user/repo"). A path means only that page and its children are
+// blocked; no path means the whole domain.
+async function addBlockedSite(target, category) {
   const sites = await getBlockedSites();
 
-  // Check if domain already exists
-  const normalizedDomain = normalizeDomain(domain);
-  if (sites.some(site => site.domain === normalizedDomain)) {
-    throw new Error('Site already blocked');
+  const { domain, path } = parseBlockTarget(target);
+
+  if (!domain) {
+    throw new Error('Please enter a domain');
+  }
+
+  if (sites.some(site => site.domain === domain && (site.path || '') === path)) {
+    throw new Error(path ? 'This page is already blocked' : 'Site already blocked');
   }
 
   const newSite = {
     id: generateId(),
-    domain: normalizedDomain,
+    domain: domain,
+    path: path,
     category: category,
     dateAdded: new Date().toISOString()
   };
@@ -98,18 +108,54 @@ async function removeBlockedSite(siteId) {
 }
 
 async function isUrlBlocked(url) {
-  try {
-    const urlObj = new URL(url);
-    const domain = urlObj.hostname.replace(/^www\./, '');
-    const sites = await getBlockedSites();
+  const sites = await getBlockedSites();
+  return findBlockedSite(url, sites);
+}
 
-    return sites.find(site => {
-      // Check if the URL's domain matches or is a subdomain of the blocked domain
-      return domain === site.domain || domain.endsWith('.' + site.domain);
-    });
-  } catch {
-    return null;
+// Blocked Keywords operations (for search-engine keyword blocking)
+function normalizeKeyword(keyword) {
+  return String(keyword || '').toLowerCase().replace(/\s+/g, ' ').trim();
+}
+
+async function getBlockedKeywords() {
+  const { blockedKeywords } = await chrome.storage.local.get('blockedKeywords');
+  return blockedKeywords ?? [];
+}
+
+async function addBlockedKeyword(keyword) {
+  const normalized = normalizeKeyword(keyword);
+
+  if (!normalized) {
+    throw new Error('Keyword cannot be empty');
   }
+
+  const keywords = await getBlockedKeywords();
+  if (keywords.some(k => k.keyword === normalized)) {
+    throw new Error('Keyword already blocked');
+  }
+
+  const newKeyword = {
+    id: generateId(),
+    keyword: normalized,
+    dateAdded: new Date().toISOString()
+  };
+
+  keywords.push(newKeyword);
+  await chrome.storage.local.set({ blockedKeywords: keywords });
+
+  return newKeyword;
+}
+
+async function removeBlockedKeyword(keywordId) {
+  const keywords = await getBlockedKeywords();
+  const filtered = keywords.filter(k => k.id !== keywordId);
+
+  if (filtered.length === keywords.length) {
+    throw new Error('Keyword not found');
+  }
+
+  await chrome.storage.local.set({ blockedKeywords: filtered });
+  return true;
 }
 
 // Categories operations
@@ -150,7 +196,16 @@ async function removeCategory(name) {
 
 // Helper functions
 function normalizeDomain(domain) {
-  let normalized = domain.toLowerCase().trim();
+  return parseBlockTarget(domain).domain;
+}
+
+// Split what the user typed (or what we read off the current tab) into a domain
+// and an optional path prefix:
+//   "reddit.com"                     -> { domain: 'reddit.com', path: '' }
+//   "https://github.com/user/repo/"  -> { domain: 'github.com', path: '/user/repo' }
+// An empty path means "the whole domain".
+function parseBlockTarget(target) {
+  let normalized = String(target || '').toLowerCase().trim();
 
   // Remove protocol if present
   normalized = normalized.replace(/^https?:\/\//, '');
@@ -158,10 +213,69 @@ function normalizeDomain(domain) {
   // Remove www. prefix
   normalized = normalized.replace(/^www\./, '');
 
-  // Remove trailing slash and path
-  normalized = normalized.split('/')[0];
+  // Query strings and fragments don't take part in matching
+  normalized = normalized.split(/[?#]/)[0];
 
-  return normalized;
+  const slash = normalized.indexOf('/');
+  if (slash === -1) {
+    return { domain: normalized, path: '' };
+  }
+
+  return {
+    domain: normalized.slice(0, slash),
+    // Trailing slashes are meaningless here, so "/user/repo/" === "/user/repo",
+    // and a bare "/" collapses to '' (i.e. the whole domain).
+    path: normalized.slice(slash).replace(/\/+$/, '')
+  };
+}
+
+// A URL's path, normalized the same way blocked paths are.
+function normalizeUrlPath(pathname) {
+  return String(pathname || '/').toLowerCase().replace(/\/+$/, '') || '/';
+}
+
+// Does a URL's path fall under a blocked path? Matching is on whole segments,
+// so "/user/repo" covers "/user/repo/issues" but NOT "/user/repo-two".
+function pathMatches(urlPath, blockedPath) {
+  if (!blockedPath) return true; // whole-domain block
+  const path = normalizeUrlPath(urlPath);
+  return path === blockedPath || path.startsWith(blockedPath + '/');
+}
+
+// Find the blocked-sites entry that matches a URL, or null. When several match
+// (e.g. the whole domain plus one specific page), the most specific one wins.
+function findBlockedSite(url, sites) {
+  let urlObj;
+  try {
+    urlObj = new URL(url);
+  } catch {
+    return null;
+  }
+
+  const domain = urlObj.hostname.toLowerCase().replace(/^www\./, '');
+  const urlPath = normalizeUrlPath(urlObj.pathname);
+
+  let best = null;
+  for (const site of sites || []) {
+    const blockedDomain = (site?.domain || '').toLowerCase();
+    if (!blockedDomain) continue;
+
+    // Exact match or subdomain match
+    if (domain !== blockedDomain && !domain.endsWith('.' + blockedDomain)) continue;
+
+    const blockedPath = site.path || '';
+    if (!pathMatches(urlPath, blockedPath)) continue;
+
+    if (!best || blockedPath.length > (best.path || '').length) best = site;
+  }
+
+  return best;
+}
+
+// How a blocked entry is shown to the user and keyed in stats.
+function formatBlockedSite(site) {
+  if (!site) return '';
+  return `${site.domain || ''}${site.path || ''}`;
 }
 
 function extractDomain(url) {
@@ -395,10 +509,19 @@ if (typeof window !== 'undefined') {
     addBlockedSite,
     removeBlockedSite,
     isUrlBlocked,
+    getBlockedKeywords,
+    addBlockedKeyword,
+    removeBlockedKeyword,
+    normalizeKeyword,
     getCategories,
     addCategory,
     removeCategory,
     normalizeDomain,
+    parseBlockTarget,
+    normalizeUrlPath,
+    pathMatches,
+    findBlockedSite,
+    formatBlockedSite,
     extractDomain,
     getSitesGroupedByCategory,
     // Stats functions

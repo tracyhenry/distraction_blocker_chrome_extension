@@ -56,7 +56,7 @@
       <!-- Blocked domain info -->
       <div>
         <div class="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm px-6 py-3 rounded-2xl mb-8">
-          <span class="text-white/60 text-sm">Blocked:</span>
+          <span id="blockedLabel" class="text-white/60 text-sm">Blocked:</span>
           <span id="blockedDomain" class="text-coral-400 font-semibold">loading...</span>
           <span id="categoryBadge" class="category-pill text-xs ml-2 hidden"></span>
         </div>
@@ -109,15 +109,8 @@
         </div>
 
         <p class="text-white/80 text-sm mb-6 font-body">
-          Tell yourself <span class="font-semibold">why</span> you need this. The pause is the point.
+          Pick how long you need. Just one tap — no typing.
         </p>
-
-        <div class="mb-6">
-          <label for="passReasonInput" class="block text-white/60 text-sm mb-2">Why do you need this right now?</label>
-          <textarea id="passReasonInput" rows="3" class="input-field" style="background: rgba(255,255,255,0.92);"
-            placeholder="e.g. confirm interview time, reset password, respond to urgent client email"></textarea>
-          <p id="passReasonHint" class="text-white/60 text-xs mt-1">Minimum 5 words.</p>
-        </div>
 
         <div class="mb-6">
           <div class="text-white/60 text-sm mb-2">How long?</div>
@@ -146,8 +139,7 @@
         <div id="passError" class="hidden text-red-500 text-sm mb-3"></div>
 
         <div class="flex items-center gap-2">
-          <button id="confirmPassBtn" class="btn-primary px-8 py-3 text-lg inline-flex items-center gap-2" disabled
-            style="opacity: 0.6;">
+          <button id="confirmPassBtn" class="btn-primary px-8 py-3 text-lg inline-flex items-center gap-2">
             Allow temporarily
           </button>
           <button id="cancelPassBtn"

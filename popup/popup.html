@@ -60,6 +60,10 @@
             class="tab-btn flex-1 py-2 text-sm font-semibold text-center transition-all text-gray-400">
             Manual Add
           </button>
+          <button id="tabKeyword"
+            class="tab-btn flex-1 py-2 text-sm font-semibold text-center transition-all text-gray-400">
+            Keyword
+          </button>
         </div>
 
         <!-- Current Site Tab Content -->
@@ -78,6 +82,21 @@
                   d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
               </svg>
               <span id="currentDomain" class="text-sm font-medium text-charcoal truncate">Loading...</span>
+            </div>
+
+            <!-- Block scope: whole site vs just this page (hidden at a site's root) -->
+            <div id="scopeSelector" class="hidden mb-3">
+              <p class="text-xs text-gray-400 mb-1.5">What should I block?</p>
+              <div class="grid grid-cols-2 gap-2">
+                <button id="scopeDomainBtn" class="scope-btn scope-btn-active" data-scope="domain">
+                  <span class="scope-btn-title">Whole site</span>
+                  <span id="scopeDomainLabel" class="scope-btn-sub"></span>
+                </button>
+                <button id="scopePathBtn" class="scope-btn" data-scope="path">
+                  <span class="scope-btn-title">This page only</span>
+                  <span id="scopePathLabel" class="scope-btn-sub"></span>
+                </button>
+              </div>
             </div>
 
             <div class="flex gap-2 mb-3">
@@ -113,7 +132,7 @@
                   d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>
-            <p class="text-sm font-medium text-charcoal">This site is already blocked!</p>
+            <p id="alreadyBlockedText" class="text-sm font-medium text-charcoal">This site is already blocked!</p>
             <p id="alreadyBlockedCategory" class="text-xs text-gray-500 mt-1"></p>
           </div>
         </div>
@@ -130,8 +149,10 @@
 
           <div class="mb-3">
             <input type="text" id="manualDomainInput" class="input-field text-sm"
-              placeholder="e.g., twitter.com, reddit.com">
-            <p class="text-xs text-gray-400 mt-1">Enter domain without https://</p>
+              placeholder="e.g., reddit.com, github.com/user/repo">
+            <p class="text-xs text-gray-400 mt-1">
+              Domain only blocks the whole site. Add a path to block just that page and everything under it.
+            </p>
           </div>
 
           <div class="flex gap-2 mb-3">
@@ -157,6 +178,31 @@
           </button>
 
           <p id="manualAddMessage" class="text-xs text-center mt-2 hidden"></p>
+        </div>
+
+        <!-- Keyword Tab Content -->
+        <div id="keywordTab" class="hidden">
+          <h2 class="font-display font-semibold text-charcoal mb-3 flex items-center gap-2">
+            <svg class="w-5 h-5 text-teal-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            Block Search Keyword
+          </h2>
+
+          <div class="mb-3">
+            <input type="text" id="keywordInput" class="input-field text-sm"
+              placeholder="e.g., nba games, world cup">
+            <p class="text-xs text-gray-400 mt-1">
+              Searching for this on Google, Bing, DuckDuckGo, etc. gets blocked.
+            </p>
+          </div>
+
+          <button id="addKeywordBtn" class="btn-primary w-full text-sm" disabled>
+            Block this keyword
+          </button>
+
+          <p id="keywordAddMessage" class="text-xs text-center mt-2 hidden"></p>
         </div>
       </section>
 
@@ -186,6 +232,35 @@
 
           <!-- Sites will be rendered here -->
           <div id="sitesContainer" class="hidden space-y-1"></div>
+        </div>
+      </section>
+
+      <!-- Blocked Keywords List -->
+      <section class="card mt-4">
+        <h2 class="font-display font-semibold text-charcoal mb-3 flex items-center gap-2">
+          <svg class="w-5 h-5 text-teal-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+          Blocked Keywords
+          <span id="keywordsCount" class="text-xs bg-gray-200 text-gray-600 px-2 py-0.5 rounded-full ml-auto">0</span>
+        </h2>
+
+        <div class="max-h-48 overflow-y-auto scrollbar-thin">
+          <!-- Empty state -->
+          <div id="keywordsEmptyState" class="text-center py-8">
+            <div class="text-gray-300 mb-3">
+              <svg class="w-12 h-12 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </div>
+            <p class="text-sm text-gray-400">No keywords blocked yet</p>
+            <p class="text-xs text-gray-300 mt-1">Block a search term you keep typing!</p>
+          </div>
+
+          <!-- Keywords will be rendered here -->
+          <div id="keywordsContainer" class="hidden space-y-1"></div>
         </div>
       </section>
     </div><!-- End Main View -->

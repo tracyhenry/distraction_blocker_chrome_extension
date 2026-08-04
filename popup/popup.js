@@ -8,8 +8,10 @@ const confettiContainer = document.getElementById('confettiContainer');
 // DOM Elements - Tabs
 const tabCurrentSite = document.getElementById('tabCurrentSite');
 const tabManualAdd = document.getElementById('tabManualAdd');
+const tabKeyword = document.getElementById('tabKeyword');
 const currentSiteTab = document.getElementById('currentSiteTab');
 const manualAddTab = document.getElementById('manualAddTab');
+const keywordTab = document.getElementById('keywordTab');
 
 // DOM Elements - Current Site Tab
 const currentDomainEl = document.getElementById('currentDomain');
@@ -20,7 +22,13 @@ const addSiteBtn = document.getElementById('addSiteBtn');
 const addSiteMessage = document.getElementById('addSiteMessage');
 const quickAddContent = document.getElementById('quickAddContent');
 const alreadyBlocked = document.getElementById('alreadyBlocked');
+const alreadyBlockedText = document.getElementById('alreadyBlockedText');
 const alreadyBlockedCategory = document.getElementById('alreadyBlockedCategory');
+const scopeSelector = document.getElementById('scopeSelector');
+const scopeDomainBtn = document.getElementById('scopeDomainBtn');
+const scopePathBtn = document.getElementById('scopePathBtn');
+const scopeDomainLabel = document.getElementById('scopeDomainLabel');
+const scopePathLabel = document.getElementById('scopePathLabel');
 
 // DOM Elements - Manual Add Tab
 const manualDomainInput = document.getElementById('manualDomainInput');
@@ -36,8 +44,22 @@ const sitesCount = document.getElementById('sitesCount');
 const emptyState = document.getElementById('emptyState');
 const sitesContainer = document.getElementById('sitesContainer');
 
+// DOM Elements - Keyword Tab
+const keywordInput = document.getElementById('keywordInput');
+const addKeywordBtn = document.getElementById('addKeywordBtn');
+const keywordAddMessage = document.getElementById('keywordAddMessage');
+
+// DOM Elements - Blocked Keywords List
+const keywordsCount = document.getElementById('keywordsCount');
+const keywordsEmptyState = document.getElementById('keywordsEmptyState');
+const keywordsContainer = document.getElementById('keywordsContainer');
+
 // State
 let currentDomain = null;
+// Path of the active tab, normalized ('' when it's the site root).
+let currentPath = '';
+// Which scope the quick-add button will use: 'domain' or 'path'.
+let currentScope = 'domain';
 let currentSiteBlocked = null;
 
 // Initialize popup
@@ -47,6 +69,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   await loadCategories();
   await loadCurrentTab();
   await loadBlockedSites();
+  await loadBlockedKeywords();
 
   // Set up event listeners - Header
   focusToggle.addEventListener('click', handleToggleFocus);
@@ -54,8 +77,18 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Set up event listeners - Tabs
   tabCurrentSite.addEventListener('click', () => switchTab('current'));
   tabManualAdd.addEventListener('click', () => switchTab('manual'));
+  tabKeyword.addEventListener('click', () => switchTab('keyword'));
+
+  // Set up event listeners - Keyword Tab
+  keywordInput.addEventListener('input', updateAddKeywordButtonState);
+  keywordInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') handleAddKeyword();
+  });
+  addKeywordBtn.addEventListener('click', handleAddKeyword);
 
   // Set up event listeners - Current Site Tab
+  scopeDomainBtn.addEventListener('click', () => setScope('domain'));
+  scopePathBtn.addEventListener('click', () => setScope('path'));
   categorySelect.addEventListener('change', handleCategoryChange);
   addSiteBtn.addEventListener('click', handleAddSite);
   newCategoryInput.addEventListener('input', updateAddButtonState);
@@ -78,21 +111,18 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 // Switch between tabs
 function switchTab(tab) {
-  if (tab === 'current') {
-    tabCurrentSite.classList.add('tab-active');
-    tabCurrentSite.classList.remove('text-gray-400');
-    tabManualAdd.classList.remove('tab-active');
-    tabManualAdd.classList.add('text-gray-400');
-    currentSiteTab.classList.remove('hidden');
-    manualAddTab.classList.add('hidden');
-  } else {
-    tabManualAdd.classList.add('tab-active');
-    tabManualAdd.classList.remove('text-gray-400');
-    tabCurrentSite.classList.remove('tab-active');
-    tabCurrentSite.classList.add('text-gray-400');
-    manualAddTab.classList.remove('hidden');
-    currentSiteTab.classList.add('hidden');
-  }
+  const tabs = [
+    { name: 'current', btn: tabCurrentSite, panel: currentSiteTab },
+    { name: 'manual', btn: tabManualAdd, panel: manualAddTab },
+    { name: 'keyword', btn: tabKeyword, panel: keywordTab }
+  ];
+
+  tabs.forEach(({ name, btn, panel }) => {
+    const active = name === tab;
+    btn.classList.toggle('tab-active', active);
+    btn.classList.toggle('text-gray-400', !active);
+    panel.classList.toggle('hidden', !active);
+  });
 }
 
 // Load and display focus mode state
@@ -221,17 +251,26 @@ function updateAddButtonState() {
   addSiteBtn.disabled = !currentDomain || !value || (isNewCategory && !newCategoryName);
 }
 
-// Get current tab domain
+// Get current tab domain + path
 async function loadCurrentTab() {
   try {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
 
     if (tab && tab.url) {
-      const domain = FocusModeStorage.extractDomain(tab.url);
+      const { domain, path } = FocusModeStorage.parseBlockTarget(tab.url);
 
       if (domain && !domain.includes('chrome://') && !domain.includes('chrome-extension://')) {
         currentDomain = domain;
-        currentDomainEl.textContent = domain;
+        currentPath = path;
+        currentDomainEl.textContent = `${domain}${path}`;
+
+        // Offer the page-only option whenever we're below the site root.
+        // At the root there's nothing to scope to, so it's domain-only.
+        const canBlockPath = !!path;
+        scopeSelector.classList.toggle('hidden', !canBlockPath);
+        scopeDomainLabel.textContent = domain;
+        scopePathLabel.textContent = path;
+        setScope(canBlockPath ? currentScope : 'domain');
 
         // Check if already blocked
         const blockedSite = await FocusModeStorage.isUrlBlocked(tab.url);
@@ -240,8 +279,13 @@ async function loadCurrentTab() {
           currentSiteBlocked = blockedSite;
           quickAddContent.classList.add('hidden');
           alreadyBlocked.classList.remove('hidden');
-          alreadyBlockedCategory.textContent = `Category: ${blockedSite.category}`;
+          alreadyBlockedText.textContent = blockedSite.path
+            ? 'This page is already blocked!'
+            : 'This site is already blocked!';
+          alreadyBlockedCategory.textContent =
+            `${FocusModeStorage.formatBlockedSite(blockedSite)} · ${blockedSite.category}`;
         } else {
+          currentSiteBlocked = null;
           quickAddContent.classList.remove('hidden');
           alreadyBlocked.classList.add('hidden');
           // Update button state now that we have the domain
@@ -249,13 +293,32 @@ async function loadCurrentTab() {
         }
       } else {
         currentDomainEl.textContent = 'Cannot block this page';
+        scopeSelector.classList.add('hidden');
         addSiteBtn.disabled = true;
       }
     }
   } catch (error) {
     currentDomainEl.textContent = 'Unable to get current tab';
+    scopeSelector.classList.add('hidden');
     addSiteBtn.disabled = true;
   }
+}
+
+// Pick whether quick-add blocks the whole domain or just the current page
+function setScope(scope) {
+  currentScope = scope === 'path' && currentPath ? 'path' : 'domain';
+
+  scopeDomainBtn.classList.toggle('scope-btn-active', currentScope === 'domain');
+  scopePathBtn.classList.toggle('scope-btn-active', currentScope === 'path');
+
+  addSiteBtn.textContent = currentScope === 'path' ? 'Block this page' : 'Block this site';
+  updateAddButtonState();
+}
+
+// What quick-add will block, e.g. "github.com" or "github.com/user/repo"
+function getQuickAddTarget() {
+  if (!currentDomain) return null;
+  return currentScope === 'path' ? `${currentDomain}${currentPath}` : currentDomain;
 }
 
 // Handle add site button
@@ -290,17 +353,21 @@ async function handleAddSite() {
     addSiteBtn.disabled = true;
     addSiteBtn.textContent = 'Adding...';
 
-    await FocusModeStorage.addBlockedSite(currentDomain, category);
+    const target = getQuickAddTarget();
+    await FocusModeStorage.addBlockedSite(target, category);
 
     // Update UI
-    showMessage('Site blocked! 🎉', 'success');
+    showMessage(currentScope === 'path' ? 'Page blocked! 🎉' : 'Site blocked! 🎉', 'success');
     await loadCategories();
     await loadBlockedSites();
 
     // Show already blocked state
     quickAddContent.classList.add('hidden');
     alreadyBlocked.classList.remove('hidden');
-    alreadyBlockedCategory.textContent = `Category: ${category}`;
+    alreadyBlockedText.textContent = currentScope === 'path'
+      ? 'This page is already blocked!'
+      : 'This site is already blocked!';
+    alreadyBlockedCategory.textContent = `${target} · ${category}`;
 
     // Notify background to update rules
     chrome.runtime.sendMessage({ action: 'updateRules' });
@@ -308,7 +375,7 @@ async function handleAddSite() {
   } catch (error) {
     showMessage(error.message, 'error');
     addSiteBtn.disabled = false;
-    addSiteBtn.textContent = 'Block this site';
+    addSiteBtn.textContent = currentScope === 'path' ? 'Block this page' : 'Block this site';
   }
 }
 
@@ -388,13 +455,13 @@ async function handleManualAddSite() {
     manualAddSiteBtn.disabled = true;
     manualAddSiteBtn.textContent = 'Adding...';
 
-    // Normalize the domain
-    const normalizedDomain = FocusModeStorage.normalizeDomain(domain);
+    // addBlockedSite parses the input into a domain + optional path
+    const { path } = FocusModeStorage.parseBlockTarget(domain);
 
-    await FocusModeStorage.addBlockedSite(normalizedDomain, category);
+    await FocusModeStorage.addBlockedSite(domain, category);
 
     // Update UI
-    showManualMessage('Site blocked! 🎉', 'success');
+    showManualMessage(path ? 'Page blocked! 🎉' : 'Site blocked! 🎉', 'success');
     await loadCategories();
     await loadBlockedSites();
 
@@ -464,7 +531,7 @@ async function loadBlockedSites() {
       <div class="category-sites pl-6 mt-1 space-y-1">
         ${categorySites.map(site => `
           <div class="site-item group" data-id="${site.id}">
-            <span class="text-sm text-charcoal truncate">${site.domain}</span>
+            <span class="text-sm text-charcoal truncate" title="${escapeHtml(FocusModeStorage.formatBlockedSite(site))}">${escapeHtml(FocusModeStorage.formatBlockedSite(site))}</span>
             <button class="delete-site-btn opacity-0 group-hover:opacity-100 text-gray-400 hover:text-coral-500 transition-all p-1 rounded-lg hover:bg-coral-50" data-id="${site.id}">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
@@ -506,6 +573,96 @@ async function loadBlockedSites() {
       }
     });
   });
+}
+
+// ============ Keyword Blocking ============
+
+// Enable/disable the add-keyword button based on input
+function updateAddKeywordButtonState() {
+  addKeywordBtn.disabled = keywordInput.value.trim().length === 0;
+}
+
+// Handle add keyword button
+async function handleAddKeyword() {
+  const keyword = keywordInput.value.trim();
+
+  if (!keyword) {
+    showKeywordMessage('Please enter a keyword', 'error');
+    return;
+  }
+
+  try {
+    addKeywordBtn.disabled = true;
+    addKeywordBtn.textContent = 'Adding...';
+
+    await FocusModeStorage.addBlockedKeyword(keyword);
+
+    showKeywordMessage('Keyword blocked! 🎉', 'success');
+    keywordInput.value = '';
+    await loadBlockedKeywords();
+  } catch (error) {
+    showKeywordMessage(error.message, 'error');
+  } finally {
+    addKeywordBtn.textContent = 'Block this keyword';
+    updateAddKeywordButtonState();
+  }
+}
+
+// Show message for keyword add
+function showKeywordMessage(text, type) {
+  keywordAddMessage.textContent = text;
+  keywordAddMessage.classList.remove('hidden', 'text-red-500', 'text-green-500');
+  keywordAddMessage.classList.add(type === 'error' ? 'text-red-500' : 'text-green-500');
+
+  setTimeout(() => {
+    keywordAddMessage.classList.add('hidden');
+  }, 3000);
+}
+
+// Load and display blocked keywords
+async function loadBlockedKeywords() {
+  const keywords = await FocusModeStorage.getBlockedKeywords();
+
+  keywordsCount.textContent = keywords.length;
+
+  if (keywords.length === 0) {
+    keywordsEmptyState.classList.remove('hidden');
+    keywordsContainer.classList.add('hidden');
+    return;
+  }
+
+  keywordsEmptyState.classList.add('hidden');
+  keywordsContainer.classList.remove('hidden');
+
+  keywordsContainer.innerHTML = keywords.map(k => `
+    <div class="site-item group" data-id="${k.id}">
+      <span class="text-sm text-charcoal truncate">"${escapeHtml(k.keyword)}"</span>
+      <button class="delete-keyword-btn opacity-0 group-hover:opacity-100 text-gray-400 hover:text-coral-500 transition-all p-1 rounded-lg hover:bg-coral-50" data-id="${k.id}">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+      </button>
+    </div>
+  `).join('');
+
+  document.querySelectorAll('.delete-keyword-btn').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      try {
+        await FocusModeStorage.removeBlockedKeyword(btn.dataset.id);
+        await loadBlockedKeywords();
+      } catch (error) {
+        console.error('Error removing keyword:', error);
+      }
+    });
+  });
+}
+
+// Escape user-provided text before inserting into innerHTML
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
 }
 
 // ============ Stats View ============
@@ -701,7 +858,7 @@ function renderTopSites(topSites) {
       <div class="stats-site-item">
         <div class="flex items-center">
           <span class="stats-site-rank ${rankClass}">${rank}</span>
-          <span class="text-charcoal truncate">${site.domain}</span>
+          <span class="text-charcoal truncate" title="${escapeHtml(site.domain)}">${escapeHtml(site.domain)}</span>
         </div>
         <span class="text-gray-500 text-sm font-medium">${site.count}</span>
       </div>
